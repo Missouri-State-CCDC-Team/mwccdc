@@ -1,6 +1,21 @@
 #!/bin/bash
 # Just because putting in a banner is SUPER common I figured  I'd send her early 
-# Thanks claude.
+# ==============================================================================
+# Script Name : banner.sh
+# Description : This script will create login baners based on given content.
+# Author      : Tyler Olson
+# Organization: Missouri State University
+# Version     : 1.0
+# ==============================================================================
+# Usage       : ./ccdc_hardening.sh
+# Notes       :
+#   - This script must be run with root or sudo privileges.
+#   - Review all configurations to ensure they align with competition policies.
+# ==============================================================================
+# Changelog:
+#   v1.0 - Creation! All basics are in here.
+# ==============================================================================
+
 
 # Function to backup existing banner files
 backup_existing_files() {
