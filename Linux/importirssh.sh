@@ -53,13 +53,67 @@ add_ssh_key() {
 }
 
 fix_sshd_config() {
-    # Make a backup copy
-    cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
+log "Configuring SSH daemon..."
     
-    sed -i 's/^#\?\(PasswordAuthentication\s\+\).*$/\1no/' /etc/ssh/sshd_config
-    sed -i 's/^#\?\(PubkeyAuthentication\s\+\).*$/\1yes/' /etc/ssh/sshd_config
-    sed -i 's/^#\?\(PermitEmptyPasswords\s\+\).*$/\1no/' /etc/ssh/sshd_config
-    echo "Restart sshd to ensure that it worked"
+    # Ensure sshd_config.d directory exists
+    mkdir -p "$SSHD_CONFIG_DIR"
+    
+    # Check and add Include directive if needed
+    if ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" "$SSHD_CONFIG"; then
+        echo "Adding Include directive to main sshd_config..."
+        # Backup original config
+        cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
+        # Add Include directive at the beginning of the file
+        sed -i '1i\Include /etc/ssh/sshd_config.d/*.conf' "$SSHD_CONFIG"
+    fi
+    
+    # Create custom config file with hardened settings
+    cat > "$SSHD_CUSTOM_CONFIG" << EOL
+# MWCCDC Custom SSH
+
+# Authentication
+PasswordAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+MaxAuthTries 3
+AuthenticationMethods publickey
+
+# Access restrictions
+AllowUsers $USERNAME
+PermitEmptyPasswords no
+LoginGraceTime 20
+MaxSessions 2
+
+
+# Logging and monitoring
+LogLevel VERBOSE
+PrintMotd no
+PrintLastLog yes
+
+# Environment and features
+X11Forwarding no
+AllowTcpForwarding no
+PermitTunnel no
+PermitUserEnvironment no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+Banner none
+EOL
+
+    chmod 644 "$SSHD_CUSTOM_CONFIG"
+    
+    # Test configuration
+    if ! sshd -t; then
+        echo "Error: Invalid SSHD configuration"
+        echo "Rolling back changes..."
+        if [ -f "${SSHD_CONFIG}.backup" ]; then
+            mv "${SSHD_CONFIG}.backup" "$SSHD_CONFIG"
+        fi
+        rm -f "$SSHD_CUSTOM_CONFIG"
+        exit 1
+    fi
+    
+    echo "SSH daemon configuration updated and verified"
 }
 
 main() {
