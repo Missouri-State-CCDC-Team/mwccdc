@@ -62,7 +62,11 @@ add_ssh_key() {
 }
 
 fix_sshd_config() {
-log "Configuring SSH daemon..."
+    echo  "Configuring SSH daemon..."
+
+    local SSHD_CONFIG_DIR="/etc/ssh/"
+    local SSHD_CONFIG="/etc/ssh/sshd_config"
+    local SSHD_COSTOM_CONFIG="/etc/ssh/sshd_config.d/$USERNAME"
     
     # Ensure sshd_config.d directory exists
     mkdir -p "$SSHD_CONFIG_DIR"
