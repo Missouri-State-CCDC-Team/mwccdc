@@ -46,7 +46,7 @@ fix_sshd_config() {
     echo "Restart sshd to ensure that it worked"
 }
 
-create_user()
-add_to_sudo()
-add_ssh_key()
-fix_sshd_config()
+create_user
+add_to_sudo
+add_ssh_key
+fix_sshd_config
