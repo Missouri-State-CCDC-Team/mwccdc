@@ -29,7 +29,7 @@ add_to_sudo() {
     chmod 440 "$SUDOERS_FILE"
 
     if ! [ -f "$SUDOERS_FILE" ]; then
-        log "Error: Failed to create sudoers file"
+        echo "Error: Failed to create sudoers file"
         exit 1
     fi
 }
@@ -46,9 +46,9 @@ add_ssh_key() {
         echo "$PUBLIC_KEY" > "$auth_keys"
         chmod 600 "$auth_keys"
         chown "$USERNAME:$USERNAME" "$auth_keys"
-        log "Added SSH public key"
+        echo "Added SSH public key"
     else
-        log "Warning: No SSH public key provided"
+        echo "Warning: No SSH public key provided"
     fi
 }
 
