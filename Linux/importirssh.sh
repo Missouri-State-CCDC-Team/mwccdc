@@ -7,7 +7,7 @@ fi
 
 USERNAME="CCDCIR"
 PASSWORD='$6$BcYgtsE4/DaFDYRG$smzaU3PCbYSZlVu7dseVcOoyTUmqh71/dG04JLTw7DYvszm5aNiqGyXJemlOVCJ8WiDlqi7GY/2/wTyqhtCrI0'
-PUBLIC_KEY=""
+PUBLIC_KEY="./pubkey"
 SUDOERS_FILE="/etc/sudoers.d/$USERNAME"
 
 create_user() {
@@ -42,8 +42,8 @@ add_ssh_key() {
     chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
     chmod 700 "$ssh_dir"
 
-    if [[ -n "$PUBLIC_KEY" ]]; then
-        echo "$PUBLIC_KEY" > "$auth_keys"
+    if [[ -n "$PUBLIC_KEY" ]]; 
+        cat "$PUBKEY_FILE" > "$auth_keys"
         chmod 600 "$auth_keys"
         chown "$USERNAME:$USERNAME" "$auth_keys"
         echo "Added SSH public key"
@@ -53,8 +53,12 @@ add_ssh_key() {
 }
 
 fix_sshd_config() {
+    # Make a backup copy
+    cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
+    
     sed -i 's/^#\?\(PasswordAuthentication\s\+\).*$/\1no/' /etc/ssh/sshd_config
     sed -i 's/^#\?\(PubkeyAuthentication\s\+\).*$/\1yes/' /etc/ssh/sshd_config
+    sed -i 's/^#\?\(PermitEmptyPasswords\s\+\).*$/\1no/' /etc/ssh/sshd_config
     echo "Restart sshd to ensure that it worked"
 }
 
