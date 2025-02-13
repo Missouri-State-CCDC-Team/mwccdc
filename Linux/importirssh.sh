@@ -27,17 +27,29 @@ add_to_sudo() {
     usermod -aG sudo $USERNAME
     echo "$USERNAME ALL=(ALL) ALL" >> /etc/sudoers.d/$USERNAME
     chmod 440 "$SUDOERS_FILE"
+
+    if ! [ -f "$SUDOERS_FILE" ]; then
+        log "Error: Failed to create sudoers file"
+        exit 1
+    fi
 }
 
 add_ssh_key() {
-    sudo -u "$USERNAME" mkdir -p "/home/$USERNAME/.ssh"
-    sudo -u "$USERNAME" chmod 700 "/home/$USERNAME/.ssh"
+    local ssh_dir"/home/$USERNAME/.ssh"
+    local auth_keys="$ssh_dir/authorized_keys"
 
-    echo "$PUBLIC_KEY" | sudo -u "USERNAME" tee -a "home/$USERNAME/.ssh/authorized_keys"
+    mkdir -p "$ssh_dir"
+    chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
+    chmod 700 "$ssh_dir"
 
-    sudo -u "$USERNAME" chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
-
-    echo "User $USERNAME ssh key added to their home directory"
+    if [[ -n "$PUBLIC_KEY" ]]; then
+        echo "$PUBLIC_KEY" > "$auth_keys"
+        chmod 600 "$auth_keys"
+        chown "$USERNAME:$USERNAME" "$auth_keys"
+        log "Added SSH public key"
+    else
+        log "Warning: No SSH public key provided"
+    fi
 }
 
 fix_sshd_config() {
@@ -46,7 +58,11 @@ fix_sshd_config() {
     echo "Restart sshd to ensure that it worked"
 }
 
-create_user
-add_to_sudo
-add_ssh_key
-fix_sshd_config
+main() {
+    create_user
+    add_to_sudo
+    add_ssh_key
+    fix_sshd_config
+}
+
+main
