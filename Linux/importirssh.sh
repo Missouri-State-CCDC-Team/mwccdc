@@ -12,6 +12,12 @@ PUBLIC_KEY="./pubkey"
 SUDOERS_FILE="/etc/sudoers.d/$USERNAME"
 read -p "enter the ssh port number: " port
 
+if ! [[ "$port" =~ ^[0-9]+$ ]]; then
+    echo "Error: Invalid port number"
+    exit 1
+fi
+
+
 
 create_user() {
     # This will create the IR user with the provided password
@@ -45,7 +51,7 @@ add_ssh_key() {
     chown -R "$USERNAME:$USERNAME" "/home/$USERNAME"
     chmod 700 "$ssh_dir"
 
-    if [[ -n "$PUBLIC_KEY" ]]; 
+    if [[ -n "$PUBLIC_KEY" ]]; then
         cat "$PUBKEY_FILE" > "$auth_keys"
         chmod 600 "$auth_keys"
         chown "$USERNAME:$USERNAME" "$auth_keys"
@@ -107,7 +113,7 @@ EOL
     chmod 444 "$SSHD_CUSTOM_CONFIG"
     
     # Test configuration
-    if ! sshd -t; then
+    if ! sshd -t ; then
         echo "Error: Invalid SSHD configuration"
         echo "Rolling back changes..."
         if [ -f "${SSHD_CONFIG}.backup" ]; then
@@ -121,10 +127,10 @@ EOL
 }
 
 main() {
-    create_user
-    add_to_sudo
-    add_ssh_key
-    fix_sshd_config
+    create_user || exit 1
+    add_to_sudo || exit 1
+    add_ssh_key || exit 1
+    fix_sshd_config || exit 1
 }
 
 main
