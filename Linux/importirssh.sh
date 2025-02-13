@@ -1,3 +1,4 @@
+#!/bin/bash
 # This will create an IR account with a pre-hashed password (CHANGE on next login) and prepare for ansible playbooks to be put onto the machine.
 
 if [ "$EUID" -ne 0 ]; then 
@@ -9,6 +10,8 @@ USERNAME="CCDCIR"
 PASSWORD='$6$BcYgtsE4/DaFDYRG$smzaU3PCbYSZlVu7dseVcOoyTUmqh71/dG04JLTw7DYvszm5aNiqGyXJemlOVCJ8WiDlqi7GY/2/wTyqhtCrI0'
 PUBLIC_KEY="./pubkey"
 SUDOERS_FILE="/etc/sudoers.d/$USERNAME"
+read -p "enter the ssh port number: " port
+
 
 create_user() {
     # This will create the IR user with the provided password
@@ -70,7 +73,7 @@ log "Configuring SSH daemon..."
     # Create custom config file with hardened settings
     cat > "$SSHD_CUSTOM_CONFIG" << EOL
 # MWCCDC Custom SSH
-
+Port $port
 # Authentication
 PasswordAuthentication no
 PubkeyAuthentication yes
