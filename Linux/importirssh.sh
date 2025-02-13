@@ -35,7 +35,7 @@ add_to_sudo() {
 }
 
 add_ssh_key() {
-    local ssh_dir"/home/$USERNAME/.ssh"
+    local ssh_dir="/home/$USERNAME/.ssh"
     local auth_keys="$ssh_dir/authorized_keys"
 
     mkdir -p "$ssh_dir"
