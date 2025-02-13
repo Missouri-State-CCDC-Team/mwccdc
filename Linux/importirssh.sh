@@ -74,11 +74,11 @@ fix_sshd_config() {
     chmod 444 "$SSHD_CONFIG"
 
     sed -i \
-      -e "s/^[# ]*Port.*/Port $NEW_PORT/" \
+      -e "s/^[# ]*Port.*/Port $port/" \
       -e 's/^[# ]*PasswordAuthentication.*/PasswordAuthentication no/' \
       -e 's/^[# ]*PermitRootLogin.*/PermitRootLogin no/' \
       -e 's/^[# ]*PubkeyAuthentication.*/PubkeyAuthentication yes/' \
-      "$CONFIG"
+      "$SSHD_CONFIG"
 
     # Test configuration
     if ! sshd -t ; then
