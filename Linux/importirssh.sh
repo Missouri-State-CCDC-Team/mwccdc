@@ -25,7 +25,7 @@ create_user() {
 
 add_to_sudo() {
     usermod -aG sudo $USERNAME
-    echo "$USERNAME ALL=(ALL) ALL:ALL" >> /etc/sudoers.d/$USERNAME
+    echo "$USERNAME ALL=(ALL) ALL" >> /etc/sudoers.d/$USERNAME
     chmod 440 "$SUDOERS_FILE"
 }
 
