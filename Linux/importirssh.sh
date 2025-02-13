@@ -64,7 +64,7 @@ log "Configuring SSH daemon..."
         # Backup original config
         cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
         # Add Include directive at the beginning of the file
-        sed -i '1i\Include /etc/ssh/sshd_config.d/*.conf' "$SSHD_CONFIG"
+        echo -e "\n#Include a custom config overiding other settings\nInclude /etc/ssh/sshd_config.d/*.conf" >> "$SSHD_CONFIG"
     fi
     
     # Create custom config file with hardened settings
@@ -100,7 +100,8 @@ ClientAliveCountMax 2
 Banner none
 EOL
 
-    chmod 644 "$SSHD_CUSTOM_CONFIG"
+    chmod 444 "$SSHD_CONFIG"
+    chmod 444 "$SSHD_CUSTOM_CONFIG"
     
     # Test configuration
     if ! sshd -t; then
