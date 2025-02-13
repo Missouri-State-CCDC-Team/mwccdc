@@ -66,56 +66,20 @@ fix_sshd_config() {
 
     local SSHD_CONFIG_DIR="/etc/ssh/"
     local SSHD_CONFIG="/etc/ssh/sshd_config"
-    local SSHD_COSTOM_CONFIG="/etc/ssh/sshd_config.d/$USERNAME"
     
     # Ensure sshd_config.d directory exists
     mkdir -p "$SSHD_CONFIG_DIR"
-    
-    # Check and add Include directive if needed
-    if ! grep -q "^Include /etc/ssh/sshd_config.d/\*.conf" "$SSHD_CONFIG"; then
-        echo "Adding Include directive to main sshd_config..."
-        # Backup original config
-        cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
-        # Add Include directive at the beginning of the file
-        echo -e "\n#Include a custom config overiding other settings\nInclude /etc/ssh/sshd_config.d/*.conf" >> "$SSHD_CONFIG"
-    fi
-    
-    # Create custom config file with hardened settings
-    cat > "$SSHD_CUSTOM_CONFIG" << EOL
-# MWCCDC Custom SSH
-Port $port
-# Authentication
-PasswordAuthentication no
-PubkeyAuthentication yes
-PermitRootLogin no
-MaxAuthTries 3
-AuthenticationMethods publickey
-
-# Access restrictions
-AllowUsers $USERNAME
-PermitEmptyPasswords no
-LoginGraceTime 20
-MaxSessions 2
-
-
-# Logging and monitoring
-LogLevel VERBOSE
-PrintMotd no
-PrintLastLog yes
-
-# Environment and features
-X11Forwarding no
-AllowTcpForwarding no
-PermitTunnel no
-PermitUserEnvironment no
-ClientAliveInterval 300
-ClientAliveCountMax 2
-Banner none
-EOL
-
+    cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
+    #Set permissions
     chmod 444 "$SSHD_CONFIG"
-    chmod 444 "$SSHD_CUSTOM_CONFIG"
-    
+
+    sed -i \
+      -e "s/^[# ]*Port.*/Port $NEW_PORT/" \
+      -e 's/^[# ]*PasswordAuthentication.*/PasswordAuthentication no/' \
+      -e 's/^[# ]*PermitRootLogin.*/PermitRootLogin no/' \
+      -e 's/^[# ]*PubkeyAuthentication.*/PubkeyAuthentication yes/' \
+      "$CONFIG"
+
     # Test configuration
     if ! sshd -t ; then
         echo "Error: Invalid SSHD configuration"
