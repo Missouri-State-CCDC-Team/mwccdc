@@ -1,0 +1,12 @@
+---
+- name: Prepare
+  hosts: all
+  become: true
+  gather_facts: false
+
+  roles:
+    - role: robertdebock.bootstrap
+    - role: robertdebock.epel
+
+
+# https://github.com/robertdebock/ansible-role-fail2ban
