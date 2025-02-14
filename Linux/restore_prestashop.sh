@@ -2,13 +2,13 @@
 
 # Variables
 
-BACKUP_FILE="prestashop.zip"           # Backup file name
+BACKUP_FILE="prestashop_1.5.6.3.zip"           # Backup file name
 SQL_DUMP_FILE="prestashop_bk.sql"      # SQL dump file name
 APACHE_DOC_ROOT="/var/www/html"
-IP_ADDRESS="172.20.241.32"           # Replace with your Fedora server's IP address
+IP_ADDRESS="172.20.241.40"           # Replace with Fedora IP 
 DB_NAME="prestashop"
-DB_USER="prestashopuser"
-DB_PASSWORD="root"
+DB_USER="root"
+DB_PASSWORD=""
 
 # Step 1: Navigate to user's home directory
 cd ~
@@ -28,7 +28,7 @@ sudo chown -R apache: ./prestashop/
 sudo chmod -R 755 ./prestashop/
 
 # Step 7: Move files to Apache document root
-sudo mv ./prestashop/* "$APACHE_DOC_ROOT/"
+sudo mv -f ./prestashop/* "$APACHE_DOC_ROOT/"
 
 # Step 8: Configure MariaDB
 sudo mysql -u root -p <<EOF
