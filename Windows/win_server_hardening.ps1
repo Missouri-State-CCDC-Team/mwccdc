@@ -77,6 +77,15 @@ Function Configure-Firewall {
 
     # Block all other inbound traffic
     netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound
+
+    # Allow outbound rules for specific ports
+    $allowOutboundPorts = @(80, 443, 67, 22, 53, 8000)
+    foreach ($port in $allowOutboundPorts) {
+        netsh advfirewall firewall add rule name="Allow-Outbound-Port-$port" dir=out action=allow protocol=TCP localport=$port
+    }
+    
+    # Block all other outbound traffic
+    netsh advfirewall set allprofiles firewallpolicy allowinbound,blockoutbound
 }
 
 #Function Disable-UnnecessaryAccounts {
