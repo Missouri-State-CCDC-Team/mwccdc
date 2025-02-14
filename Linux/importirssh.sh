@@ -52,7 +52,7 @@ add_ssh_key() {
     chmod 700 "$ssh_dir"
 
     if [[ -n "$PUBLIC_KEY" ]]; then
-        cat "$PUBKEY_FILE" > "$auth_keys"
+        cat "$PUBKEY_KEY" > "$auth_keys"
         chmod 600 "$auth_keys"
         chown "$USERNAME:$USERNAME" "$auth_keys"
         echo "Added SSH public key"
