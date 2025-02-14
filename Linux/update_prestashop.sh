@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Variables
-ROOT_PASSWORD="root"              # Replace with the new root password
-SYSADMIN_PASSWORD="root"      # Replace with the new sysadmin password
-PRESTASHOPUSER_PASSWORD="root" # Replace with the new PrestaShop user password
-COOKIE_VALUE="Cgqd54npQuGSCxZwRN6fP645XpKqcI8q7kXkNFohtQvQiso2uo7R5DXH"                    # Replace with the cookie value
-NEW_ADMIN_PASSWORD="admin"        # Replace with the new admin portal password
-ADMIN_EMAIL="zongxiliu@missouristate.edu"          # Replace with the admin email
-ALLOWED_SSH_IP="172.20.242.12"                # Replace with the IP allowed for SSH
+ROOT_PASSWORD=""              # Replace with the new root password
+SYSADMIN_PASSWORD=""      # Replace with the new sysadmin password
+PRESTASHOPUSER_PASSWORD="" # Replace with the new PrestaShop user password
+COOKIE_VALUE="INLUuxkWHDX9k7jE6Q7rs3gvWzPQWw8z77sufKkTIzjz2QR4e3RodgYO"                    # Replace with cookie value
+NEW_ADMIN_PASSWORD=""        # Replace with the new admin portal password
+ADMIN_EMAIL="greg@presta.local"          # Replace with the admin email
+#ALLOWED_SSH_IP="172.20.242.12"                # Replace with the IP allowed for SSH
        # Apache configuration file
-PRESTASHOP_CONF="/var/www/html/config/settings.inc.php" # Replace with the actual path
+PRESTASHOP_CONF="/var/www/html/prestashop/config/settings.inc.php" # Replace with the actual path
 
 
 
@@ -17,7 +17,9 @@ PRESTASHOP_CONF="/var/www/html/config/settings.inc.php" # Replace with the actua
 echo "Updating MySQL root and PrestaShop user passwords..."
 sudo mysql -u root -p <<EOF
 SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$ROOT_PASSWORD');
-SET PASSWORD FOR 'prestashopuser'@'localhost' = PASSWORD('$PRESTASHOPUSER_PASSWORD');
+SET PASSWORD FOR 'root'@'dareduck' = PASSWORD('$PRESTASHOPUSER_PASSWORD');
+SET PASSWORD FOR 'root'@'127.0.0.1' = PASSWORD('$PRESTASHOPUSER_PASSWORD');
+SET PASSWORD FOR '::1' = PASSWORD('$PRESTASHOPUSER_PASSWORD');
 FLUSH PRIVILEGES;
 EOF
 
@@ -41,9 +43,10 @@ EOF
 
 # Step 4: Configure firewalld
 echo "Configuring firewalld..."
-sudo firewall-cmd --permanent --set-default-zone=drop
+sudo firewall-cmd --set-default-zone=drop
 sudo firewall-cmd --permanent --add-port=80/tcp
-sudo firewall-cmd --permanent --add-rich-rule="rule family='ipv4' source address='$ALLOWED_SSH_IP' port port=22 protocol=tcp accept"
+sudo firewall-cmd --permanent --add-port=443/tcp
+#sudo firewall-cmd --permanent --add-rich-rule="rule family='ipv4' source address='$ALLOWED_SSH_IP' port port=22 protocol=tcp accept"
 sudo firewall-cmd --reload
 
 echo "Configuration completed successfully."
