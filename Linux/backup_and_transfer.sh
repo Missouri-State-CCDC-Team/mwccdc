@@ -2,10 +2,10 @@
 DB_USER="root"
 DB_NAME="prestashop"
 BACKUP_FILE1="prestashop_bk.sql"
-BACKUP_FILE2="prestashop.zip"
-FEDORA_USER="root"              # Replace with your Fedora username
-FEDORA_IP="172.20.241.42"           # Replace with your Fedora server's IP address
-FEDORA_DESTINATION="/home/$FEDORA_USER" # Path to store the files on Fedora
+BACKUP_FILE2="prestashop_1.5.6.3.zip"
+FEDORA_USER="root"              # Replace with Fedora username
+FEDORA_IP="172.20.241.40"           # Replace with Fedora IP address
+FEDORA_DESTINATION="~" # Path to store files on Fedora
 
 # Step 1: Back up the database
 echo "Backing up the PrestaShop database..."
