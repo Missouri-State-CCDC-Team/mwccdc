@@ -2,9 +2,9 @@
 DB_USER="root"
 DB_NAME="prestashop"
 BACKUP_FILE1="prestashop_bk.sql"
-BACKUP_FILE2="prestashop_1.5.6.3.zip"
+BACKUP_FILE2="prestashop.zip"
 FEDORA_USER="root"              # Replace with Fedora username
-FEDORA_IP="172.20.241.40"           # Replace with Fedora IP address
+FEDORA_IP="172.20.241.0"           # Replace with Fedora IP address
 FEDORA_DESTINATION="~" # Path to store files on Fedora
 
 # Step 1: Back up the database
@@ -17,6 +17,10 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "Database backup completed: $BACKUP_FILE"
+
+echo "backing up prestashop files"
+cd /var/www/html
+zip -r ~/$BACKUP_FILE2 prestashop/
 
 # Step 2: Copy the backup file to the Fedora server
 echo "Transferring backup file to Fedora server..."
