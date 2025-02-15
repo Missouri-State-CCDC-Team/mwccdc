@@ -5,7 +5,7 @@
 BACKUP_FILE="prestashop.zip"           # Backup file name
 SQL_DUMP_FILE="prestashop_bk.sql"      # SQL dump file name
 APACHE_DOC_ROOT="/var/www/html"
-IP_ADDRESS="172.20.241.20"           # Replace with Fedora IP 
+IP_ADDRESS="172.20.241.0"           # Replace with Fedora IP 
 DB_NAME="prestashop"
 DB_USER="root"
 DB_PASSWORD=""
