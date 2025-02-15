@@ -45,7 +45,7 @@ EOF
 echo "Configuring firewalld..."
 sudo firewall-cmd --set-default-zone=drop
 sudo firewall-cmd --permanent --add-port=80/tcp
-sudo firewall-cmd --permanent --add-port=443/tcp
+#sudo firewall-cmd --permanent --add-port=443/tcp
 #sudo firewall-cmd --permanent --add-rich-rule="rule family='ipv4' source address='$ALLOWED_SSH_IP' port port=22 protocol=tcp accept"
 sudo firewall-cmd --reload
 
