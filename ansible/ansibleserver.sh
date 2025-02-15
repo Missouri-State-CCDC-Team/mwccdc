@@ -48,6 +48,8 @@ github() {
     git clone https://github.com/rdiers/CentOS7-CIS 
     git clone https://github.com/ansible-lockdown/UBUNTU18-CIS 
 
+    #reset to home
+    cd ~
 }
 
 
@@ -75,7 +77,7 @@ main() {
     pre-setup || log "Pre-set up failed"
     galaxy-setup || log "Galaxy failed"
     github || log "Github failed"
-    git_sparse_clone "https://github.com/Missouri-State-CCDC-Team/mwccdc" "~/ansible/" "/ansible"
+    git_sparse_clone "https://github.com/Missouri-State-CCDC-Team/mwccdc" "./ansible/" "/ansible"
 }
 
 main
