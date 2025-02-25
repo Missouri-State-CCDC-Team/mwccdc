@@ -10,14 +10,13 @@ USERNAME="CCDCIR"
 PASSWORD='$6$BcYgtsE4/DaFDYRG$smzaU3PCbYSZlVu7dseVcOoyTUmqh71/dG04JLTw7DYvszm5aNiqGyXJemlOVCJ8WiDlqi7GY/2/wTyqhtCrI0'
 PUBLIC_KEY="./pubkey"
 SUDOERS_FILE="/etc/sudoers.d/$USERNAME"
+
 read -p "enter the ssh port number: " port
 
 if ! [[ "$port" =~ ^[0-9]+$ ]]; then
     echo "Error: Invalid port number"
     exit 1
 fi
-
-
 
 create_user() {
     # This will create the IR user with the provided password
