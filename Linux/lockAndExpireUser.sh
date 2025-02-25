@@ -4,6 +4,8 @@
 # accounts that do not have a /home/ directory.
 # Alternative to deleting in case an important user needs to be kept, we can simply reactivate it.
 
+# Don't use this on fedora, it breaks it.
+
 declare -a SAFE
 
 SAFE=("root" "blackteam")

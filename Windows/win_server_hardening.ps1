@@ -30,8 +30,30 @@ function Set-RestrictedExecutionPolicy {
 }
 
 function Disable-Remoting {
-    Disable-PSRemoting -Force
-    Write-Host "PowerShell remoting disabled."
+    Disable-PSRemoting -Force -SkipNetworkProfileCheck
+    Write-Host "WinRM Disabled"
+    # Disable RDP
+    try {
+        # Set registry value to deny Remote Desktop connections
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 1 -Force
+
+        # Optionally disable the Remote Desktop Service (TermService)
+        Set-Service -Name TermService -StartupType Disabled -ErrorAction SilentlyContinue
+        Stop-Service -Name TermService -Force -ErrorAction SilentlyContinue
+        Write-Host "Remote Desktop has been disabled." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "error in disabling remote assistance: $_" -ForegroundColor Red
+    }
+    # Disable remote registry
+    try {
+        Set-Service -Name RemoteRegistry -StartupType Disabled -ErrorAction SilentlyContinue
+        Stop-Service -Name RemoteRegistry -Force -ErrorAction SilentlyContinue
+        Write-Host "Remote Registry service has been disabled." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Error disabling Remote Registry: $_" -ForegroundColor Red
+    }
 }
 
 function Stop-UnnecessaryServices {
