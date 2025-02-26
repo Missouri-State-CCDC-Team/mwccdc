@@ -34,7 +34,7 @@ fi
 # Prompt for the password securely
 echo -n "Enter password for user ${USERNAME}: "
 read -s PASSWORD
-echo ""
+echo "\n"
 
 # Run commands on the remote server to create the user, set the password,
 # and create the .ssh directory.

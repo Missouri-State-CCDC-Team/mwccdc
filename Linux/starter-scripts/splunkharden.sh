@@ -1,7 +1,7 @@
 #!/bin/bash 
 # ==============================================================================
 # Script Name : splunkharden.sh
-# Description : If we have the time to use ansible for our network. Through ssh this will set up and ansible user with a supplied public key file for ansible.
+# Description : This is specifically to harden the splunk server.
 # Author      : Tyler Olson
 # Organization: Missouri State University
 # Version     : 1.0
@@ -23,22 +23,19 @@ backupip="172.20.20.20"
 backup-account="root"
  
 # I love the colors
-RED=$'\e[0;31m'
-GREEN=$'\e[0;32m'
-YELLOW=$'\e[0;33m'
-BLUE=$'\e[0;34m'
-NC=$'\e[0m'  #No Color - resets the color back to default
+RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\e[0m'  #No Color - resets the color back to default
 
-
+# Check for root
 if [ "$(id -u)" != "0" ]; then
     echo "This script must be run as root or with sudo privileges"
     exit 1
 fi
 
-log() {
-    echo -e "${RED}$1${NC}"
-}
+# Logging function
+log() { echo -e "${RED}$1${NC}"; }
 
+
+# Run password changes
 password_changes() {
     for user in $defaultUsers; do
         echo "Changing password for $user"
@@ -67,7 +64,7 @@ updateinstall() {
     echo "Now attempting to upgrade packages..."
     # Install some applications to assist with anti cookie theft (I'M KEEPING THEM ALLLL)
     yum update
-    yum install fail2ban rkhunter curl
+    yum install -y fail2ban rkhunter curl tripwire
     systemctl enable fail2ban
 }
 
@@ -113,11 +110,7 @@ firewallConfig() {
     # Firewall Rules
     sudo firewall-cmd --new-zone=ccdczone
     sudo firewall-cmd --set-default-zone=ccdczone
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=8000/tcp
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=8089/tcp
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=8191/tcp
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=8191/tcp
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=2222/tcp
+    sudo firewall-cmd --permanent --zone=ccdczone --add-port=8000/tcp,8089/tcp,8191/tcp,
     # Chronyd (NTP)
     sudo firewall-cmd --permanent --add-port=323/
 
@@ -131,34 +124,6 @@ firewallConfig() {
     firewall-cmd --list-all
     echo "-------------"
 }
-
-login_wall() {
-    # Logging in wall
-    LINE='wall "$(id -un) logged in from $(echo $SSH_CLIENT | awk '"'"'{print $1}'"'"')"'
-
-    echo "$LINE" | sudo tee /etc/profile.d/login_wall.sh > /dev/null
-    sudo chmod +x /etc/profile.d/login_wall.sh
-
-    for dir in /home/*; do
-        if [ -d "$dir" ]; then
-            USER_BASHRC="$dir/.bashrc"
-            if ! grep -qF "$LINE" "$USER_BASHRC"; then
-                echo "$LINE" | sudo tee -a "$USER_BASHRC" > /dev/null
-            fi
-        fi
-    done
-
-    if ! grep -qF "$LINE" /root/.bashrc; then
-        echo "$LINE" | sudo tee -a /root/.bashrc > /dev/null
-    fi
-}
-
-scriptCopy() {
-    # Clones some important scripts for splunk :)
-    curl https://raw.githubusercontent.com/Missouri-State-CCDC-Team/mwccdc/refs/heads/main/Linux/lockAndExpireUser.sh >> lockAndExpireUser.sh
-    curl https://github.com/Missouri-State-CCDC-Team/mwccdc/blob/main/Linux/fileMonitoringEtc.sh >> fileMonitor.sh
-}
-
 
 main() {
     backup || 
