@@ -27,29 +27,35 @@ Invoke-WebRequest -Uri $kernelUrl -OutFile $kernelPath
 Start-Process msiexec.exe -Wait -ArgumentList "/i $kernelPath /quiet /norestart"
 wsl --set-default-version 2
 
-# 3. Install Ubuntu (silent install)
-$ubuntuUrl = "https://aka.ms/wsl-ubuntu-2004"
-$ubuntuPath = "$env:TEMP\Ubuntu.appx"
-Invoke-WebRequest -Uri $ubuntuUrl -OutFile $ubuntuPath
-Add-AppxPackage -Path $ubuntuPath
 
-# 4. Wait for WSL initialization and run commands in Ubuntu
+# If a reboot is needed, create a scheduled task to resume after reboot
+if ($needsReboot) {
+    $taskName = "ContinueWSLSetup"
+    $scriptPath = "$env:TEMP\resume_wsl_install.ps1"
+
+    # Write the remainder of the script to a new file
+    @'
+# Resume WSL installation
 $githubScriptUrl = "https://raw.githubusercontent.com/Missouri-State-CCDC-Team/mwccdc/refs/heads/main/ansible/ansibleserver.sh"
 $wslCommand = @"
 #!/bin/bash
-# Update packages first
 apt-get update && apt-get upgrade -y
-
-# Download and execute external script
 curl -sSL $githubScriptUrl | bash -s --
 "@
 
-# Save commands to temporary script
 $tempScript = "$env:TEMP\wsl_init.sh"
 $wslCommand | Out-File -FilePath $tempScript -Encoding ASCII
-
-# Execute the script in Ubuntu
 wsl -d Ubuntu -u root bash -c "bash $tempScript"
-
-# Cleanup
 Remove-Item $tempScript
+
+# Remove the scheduled task
+schtasks /delete /tn "ContinueWSLSetup" /f
+Remove-Item -Path "$scriptPath" -Force
+'@ | Out-File -FilePath $scriptPath -Encoding ASCII
+
+    # Create a scheduled task to run this script at startup
+    schtasks /create /tn $taskName /tr "powershell.exe -ExecutionPolicy Bypass -File $scriptPath" /sc onstart /ru SYSTEM
+
+    # Reboot the system
+    Restart-Computer -Force
+}
