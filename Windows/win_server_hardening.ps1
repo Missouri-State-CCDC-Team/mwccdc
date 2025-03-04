@@ -4,15 +4,6 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit
 }
 
-#Function Reset-UserPassword {
-#    param (
-#        [string]$UserName,
-#        [string]$NewPassword
-#    )
-#    Write-Host "Resetting password for user $UserName..."
-#    net user $UserName $NewPassword
-#}
-
 function Export-CommandHistory {
     $historyFile = (Get-PSReadlineOption).HistorySavePath
     if (Test-Path $historyFile) {
@@ -41,6 +32,13 @@ function Disable-Remoting {
         Set-Service -Name TermService -StartupType Disabled -ErrorAction SilentlyContinue
         Stop-Service -Name TermService -Force -ErrorAction SilentlyContinue
         Write-Host "Remote Desktop has been disabled." -ForegroundColor Green
+
+        # Configure Audit Policies for Domain Controller
+        auditpol /set /category:"Account Logon" /success:enable /failure:enable
+        auditpol /set /category:"Logon/Logoff" /success:enable /failure:enable
+        auditpol /set /category:"Account Management" /success:enable /failure:enable
+        auditpol /set /category:"Object Access" /success:enable /failure:enable
+        auditpol /set /category:"Policy Change" /success:enable /failure:enable
     }
     catch {
         Write-Host "error in disabling remote assistance: $_" -ForegroundColor Red
@@ -68,12 +66,6 @@ function Stop-UnnecessaryServices {
     }
 }
 
-function Run-SystemFileCheck {
-    Write-Host "Starting system file check..."
-    sfc /scannow
-    Write-Host "System file check completed."
-}
-
 function Check-LastLogon {
     $adminLastLogon = (net user administrator | Select-String -Pattern "^Last logon").Line
     Write-Host "Administrator's last logon: $adminLastLogon"
@@ -85,30 +77,79 @@ Function Disable-SMBv1 {
 }
 
 # Configure firewall rules
-Function Configure-Firewall {
-    Write-Host "Configuring firewall rules..."
+function Invoke-NetworkHardening {
+    try {
+        Write-SecurityLog "Configuring Advanced Windows Firewall for AD DNS Server"
+        
+        # Disable all inbound connections by default
+        netsh advfirewall set allprofiles firewallpolicy blockinbound,blockoutbound
 
-    # Clear all current rules
-   # netsh advfirewall firewall delete rule name=all
+        # Essential ports for Active Directory and DNS
+        $criticalAllowedPorts = @(
+            # DNS Ports
+            @{Port=53; Protocol="TCP"; Name="DNS-TCP"},
+            @{Port=53; Protocol="UDP"; Name="DNS-UDP"},
+            
+            # Active Directory Communication Ports
+            @{Port=88; Protocol="TCP"; Name="Kerberos"},    # Kerberos Authentication
+            @{Port=88; Protocol="UDP"; Name="Kerberos-UDP"},
+            @{Port=389; Protocol="TCP"; Name="LDAP"},       # Lightweight Directory Access Protocol
+            @{Port=636; Protocol="TCP"; Name="LDAPS"},      # LDAP over SSL
+            @{Port=464; Protocol="TCP"; Name="Kpasswd"},    # Kerberos password change
+            @{Port=464; Protocol="UDP"; Name="Kpasswd-UDP"},
+            
+            # Domain Controller Communication
+            @{Port=3268; Protocol="TCP"; Name="Global-Catalog"},  # Global Catalog
+            @{Port=3269; Protocol="TCP"; Name="Global-Catalog-SSL"},
+            
+            # RPC for AD Replication
+            @{Port=135; Protocol="TCP"; Name="RPC-Endpoint-Mapper"},
+            @{Port=49152; Protocol="TCP"; Name="RPC-Dynamic-Ports-Low"},
+            @{Port=49153; Protocol="TCP"; Name="RPC-Dynamic-Ports-Mid"},
+            @{Port=49154; Protocol="TCP"; Name="RPC-Dynamic-Ports-High"}
+        )
 
-    # Allow inbound rules for specific ports
-    $allowInboundPorts = @(80, 443, 67, 22, 53, 8000)
-    foreach ($port in $allowInboundPorts) {
-        netsh advfirewall firewall add rule name="Allow-Inbound-Port-$port" dir=in action=allow protocol=TCP localport=$port
+        # Add firewall rules for critical AD and DNS ports
+        foreach ($rule in $criticalAllowedPorts) {
+            netsh advfirewall firewall add rule `
+                name="Allow-${$rule.Name}" `
+                dir=in `
+                action=allow `
+                protocol=$rule.Protocol `
+                localport=$rule.Port `
+                profile=domain,private `
+                enable=yes
+        }
+
+        # Block common attack ports
+        $blockedPorts = @(
+            21,   # FTP
+            22,   # SSH
+            23,   # Telnet
+            25,   # SMTP
+            110,  # POP3
+            143,  # IMAP
+            445,  # SMB
+            #3389  # RDP
+        )
+        foreach ($port in $blockedPorts) {
+            netsh advfirewall firewall add rule `
+                name="Block-Port-$port" `
+                dir=in `
+                action=block `
+                protocol=TCP `
+                localport=$port
+        }
+
+        Write-SecurityLog "AD Network Hardening Complete" -Success
     }
-
-    # Block all other inbound traffic
-    netsh advfirewall set allprofiles firewallpolicy blockinbound,allowoutbound
-
-    # Allow outbound rules for specific ports
-    $allowOutboundPorts = @(80, 443, 67, 22, 53, 8000)
-    foreach ($port in $allowOutboundPorts) {
-        netsh advfirewall firewall add rule name="Allow-Outbound-Port-$port" dir=out action=allow protocol=TCP localport=$port
+    catch {
+        Write-SecurityLog "Network Hardening Failed: $_" -Error
     }
-    
-    # Block all other outbound traffic
-    netsh advfirewall set allprofiles firewallpolicy allowinbound,blockoutbound
 }
+
+
+
 
 #Function Disable-UnnecessaryAccounts {
 #    Write-Host "Disabling unnecessary user accounts..."
@@ -159,23 +200,20 @@ Function Install-WLANService {
 #    Write-Host "Splunk downloaded to $output"
 #}
 
+
 # Main script execution
 Write-Host "Starting server configuration script..."
 
 
-#Reset-UserPassword -UserName "Administrator" -NewPassword "NewSecurePassword123!"
-
 #Disable-SMBv1
 
-Configure-Firewall
+Invoke-NetworkHardening
 
 #Disable-UnnecessaryAccounts
 
 Configure-NTP
 
 #Set-RestrictedExecutionPolicy
-
-#Run-SystemFileCheck
 
 #Install-WLANService
 

@@ -44,6 +44,7 @@ github() {
     # Remediate to CIS Benchmarks 
     git clone https://github.com/ansible-lockdown/Windows-2019-CIS
     git clone https://github.com/rdiers/CentOS7-CIS 
+    git clone https://github.com/ansible-lockdown/RHEL7-CIS
     git clone https://github.com/ansible-lockdown/UBUNTU18-CIS 
 
     #reset to home

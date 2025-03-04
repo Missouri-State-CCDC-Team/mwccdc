@@ -25,7 +25,7 @@ username='root'
 newUsername='example'
 services=("postfix" "dovecot")
 
-RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\e[0m'       # Sets the colors in use throughout the cude
+RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\e[0m'       # Sets the colors in use throughout the code
 
 
 # Functions:
@@ -62,6 +62,29 @@ backup() {
     done
 
     rsync -av /usr/bin/ /root/backit/binaries/ --exclude "*.tmp"       # backup binaries
+    tar -czvf /root/backit/in_hardening_backup.tar.gz \
+    /root \
+    /var/www/html \
+    /etc/roundcubemail \
+    /etc/httpd \
+    /etc/dovecot \
+    /etc/postfix \
+    /etc/cron* \
+    /etc/passwd \
+    /etc/group \
+    /etc/shadow \
+    /etc/sudoers* \
+    /etc/hosts \
+    /etc/hostname \
+    /etc/aliases \
+    /etc/systemd \
+    /etc/yum* \
+    /etc/resolv.conf \
+    /usr/share/httpd \
+    /srv/vmail \
+    /etc/sysconfig \
+    /usr/share/roundcubemail \
+    /usr/share/dovecot
 
     echo -e "${YELLOW}Completed the backup${NC}"
 }
