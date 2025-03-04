@@ -24,7 +24,8 @@ fi
 # Definitions:
 username='root'
 newUsername='example'
-newRootPassword='password'
+services=("postfix" "dovecot")
+
 RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\e[0m'       # Sets the colors in use throughout the cude
 
 
@@ -36,47 +37,78 @@ software() {
     yum install -y tmux tripwire
 }
 
-tripwire() {
-    # Commands adapted from redhat's implementation 
-    echo -e "${GREEN}About to create keys for tripwire, be ready to enter supplied site and local password"
-    echo "This local key is intdnded to be unique to each server. Please note down what you put in."
-    twadmin --generate-keys --local-keyfile /etc/tripwire/$(hostname)-local.key || notify "failed to set local key"
-    echo "This site key is accross the network."
-    twadmin --generate-keys --site-keyfile /etc/tripwire/site.key || notify "failed to generate site key"
-
-    # Create the config file for the tripwire configuration
-    twadmin --create-cfgfile --site-keyfile /etc/tripwire/site.key /etc/tripwire/twcfg.txt
+passchange() {
+    echo "changing root password"
+    passwd
+    echo "changing password of provided username"
+    passwd $username
 }
 
-# ==============================================================================
-# Set up a login wall that will notify everyone if someone logs in through SSH
-# ==============================================================================
 
-login_wall() {
-    # Logging in wall
-    LINE='wall "$(id -un) logged in from $(echo $SSH_CLIENT | awk '"'"'{print $1}'"'"')"'
+backup() {
+    mkdir -p /root/backit /etc/backup/ /root/backit/binaries
 
-    echo "$LINE" | sudo tee /etc/profile.d/login_wall.sh > /dev/null
-    sudo chmod +x /etc/profile.d/login_wall.sh
+    for service in "${services[@]}"; do
+        if [ -d "/etc/$service" ]; then
+            cp -r "/etc/$service" "/root/backit/"
+            echo "Backed up /etc/$service"
+        elif [ -f "/etc/$service.conf" ]; then
+            cp "/etc/$service.conf" "/root/backit/"
+            echo "Backed up /etc/$service.conf"
+        else
+            echo "Warning: No config found for $service"
+        fi
+    done
 
-    for dir in /home/*; do
-        if [ -d "$dir" ]; then
-            USER_BASHRC="$dir/.bashrc"
-            if ! grep -qF "$LINE" "$USER_BASHRC"; then
-                echo "$LINE" | sudo tee -a "$USER_BASHRC" > /dev/null
+    rsync -av /usr/bin/ /root/backit/binaries/ --exclude "*.tmp"       # backup binaries
+
+    echo "Completed the backup"
+}
+
+malphp() {
+    echo "cleaning up php files"
+    find / -type f -name "index.php" ! -path "/var/www/*" 2>/dev/null | while read -r file; do
+        # Backup the file to /root/ with a timestamp
+        backup_file="/root/$(basename "$file")_$(date +%F_%T)"
+        cp "$file" "$backup_file"
+        rm -f "$file"            # Remove the original file
+
+        # Log the action
+        echo "Removed malicious PHP file: $file (Backed up at $backup_file)" | tee -a "$LOGFILE"
+    done
+    echo "cleaned up any php"
+}
+
+findcron() {
+    echo "Scanning for crontab entries..."
+
+    # Locations to check
+    locations=("/etc/crontab" "/etc/cron.d/*" "/var/spool/cron/crontabs/*" "/var/spool/cron/*" "/etc/cron.hourly/*" "/etc/cron.daily/*" "/etc/cron.weekly/*" "/etc/cron.monthly/*" "/etc/anacrontab")
+
+    # Loop through each location
+    for loc in "${locations[@]}"; do
+        if [ -f "$loc" ] || [ -d "$loc" ]; then
+            content=$(cat "$loc" 2>/dev/null)
+            if [ -n "$content" ]; then
+                echo -e "\n--- Found crontab at: $loc ---"
+                echo "$content"
             fi
         fi
     done
 
-    if ! grep -qF "$LINE" /root/.bashrc; then
-        echo "$LINE" | sudo tee -a /root/.bashrc > /dev/null
-    fi
+    for user in $(cut -d: -f1 /etc/passwd); do
+        cronfile="/var/spool/cron/crontabs/$user"
+        if [ -f "$cronfile" ]; then
+            content=$(cat "$cronfile" 2>/dev/null)
+            if [ -n "$content" ]; then
+                echo -e "\n--- User crontab for $user at: $cronfile ---"
+                echo "$content"
+            fi
+        fi
+    done
+
+echo "crontab scan complete."
 }
-
-
-# ==============================================================================
-# Set up a login wall that will notify everyone if someone logs in through SSH
-# ==============================================================================
 
 firewall_config() {
     # Firewall Rules
@@ -108,8 +140,48 @@ check_services() {
     fi
 }
 
+
+### NEED TO ADD PUBLIC KEY ADDITION TO THIS FILE. 
+
+ssh_config() {
+    # Needed SSH Config Files
+    local SSHD_CONFIG_DIR="/etc/ssh/"
+    local SSHD_CONFIG="/etc/ssh/sshd_config"
+
+    # Ensure sshd_config.d directory exists
+    mkdir -p "$SSHD_CONFIG_DIR"
+    cp "$SSHD_CONFIG" "${SSHD_CONFIG}.backup"
+    #Set permissions
+    chmod 444 "$SSHD_CONFIG"
+
+    sed -i \
+      -e "s/^[# ]*Port.*/Port $port/" \
+      -e 's/^[# ]*PasswordAuthentication.*/PasswordAuthentication no/' \
+      -e 's/^[# ]*PermitRootLogin.*/PermitRootLogin no/' \
+      -e 's/^[# ]*PubkeyAuthentication.*/PubkeyAuthentication yes/' \
+      -e 's/^[# ]*X11[Ff]orwarding .*/X11Forwarding no/' \
+      -e 's/^[# ]*MaxAuthTries .*/MaxAuthTries 3/' \
+      -e 's/^[# ]*ClientAliveMaxCount .*//ClientAliveMaxCount 2/' \
+      "$SSHD_CONFIG"
+
+    systemctl restart ssh
+    echo  "Configuring SSH daemon..."
+
+    # Test configuration to see if there was errors
+    if ! sshd -t ; then
+        echo "Error: Invalid SSHD configuration"
+        echo "Rolling back changes..."
+        if [ -f "${SSHD_CONFIG}.backup" ]; then
+            mv "${SSHD_CONFIG}.backup" "$SSHD_CONFIG"
+        fi
+        rm -f "$SSHD_CUSTOM_CONFIG"
+        exit 1
+}
+
 main() {
     login_wall
 
-
+    echo "completed all basic hardening"
+    echo 'Please now run "AdvHardening" for your distro'
+    echo "and don't forget to change the password"
 }

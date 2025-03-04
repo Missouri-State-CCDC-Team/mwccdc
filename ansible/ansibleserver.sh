@@ -7,9 +7,7 @@
 # Here for rest: https://learn.microsoft.com/en-us/windows/wsl/install-on-server
 
 # Color Variables
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-RESET='\033[0m' # Reset color
+RED='\033[0;31m'; GREEN='\033[0;32m'; RESET='\033[0m' # Reset color
 
 log() {
     echo -e "${RED}$1${RESET}"
