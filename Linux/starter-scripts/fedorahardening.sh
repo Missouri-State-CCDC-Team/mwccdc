@@ -107,7 +107,7 @@ findcron() {
         fi
     done
 
-echo "crontab scan complete."
+    echo "crontab scan complete."
 }
 
 firewall_config() {
@@ -176,12 +176,22 @@ ssh_config() {
         fi
         rm -f "$SSHD_CUSTOM_CONFIG"
         exit 1
+    fi
 }
 
 main() {
-    login_wall
+    software
+    passchange
+    backup
+    malphp
+    findcron
+    firewall_config
+    check_services
+    ssh_config
 
     echo "completed all basic hardening"
     echo 'Please now run "AdvHardening" for your distro'
     echo "and don't forget to change the password"
 }
+
+main
