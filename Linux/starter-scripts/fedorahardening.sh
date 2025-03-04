@@ -5,14 +5,13 @@
 # Description : Configure everything from A to B
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 0.9
 # ==============================================================================
 # Usage       : fedoraharden.sh
 # Notes       :
 #   - Make sure to update the variables as needed to configure the system correctly.
 # ==============================================================================
 # Changelog:
-#   v0.9 - Working on the many different functions
+#   v1 - Major bug fixes and additions of colors to the file
 # ==============================================================================
 
 # Check if added as root
@@ -33,14 +32,16 @@ RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\
 notify() { echo -e "${RED}$1${NC}"; }
 
 software() {
+    echo -e "${YELLOW} Installing software required for this system${NC}"
     sudo yum update
     yum install -y tmux tripwire
+    echo -e "${GREEN} Software function completed.${NC}"
 }
 
 passchange() {
-    echo "changing root password"
+    echo -e "${YELLOW}changing root password${NC}"
     passwd
-    echo "changing password of provided username"
+    echo -e "${YELLOW}changing password of provided username${NC}"
     passwd $username
 }
 
@@ -51,22 +52,22 @@ backup() {
     for service in "${services[@]}"; do
         if [ -d "/etc/$service" ]; then
             cp -r "/etc/$service" "/root/backit/"
-            echo "Backed up /etc/$service"
+            echo -e "${GREEN}Backed up /etc/$service${NC}"
         elif [ -f "/etc/$service.conf" ]; then
             cp "/etc/$service.conf" "/root/backit/"
-            echo "Backed up /etc/$service.conf"
+            echo -e "${GREEN}Backed up /etc/$service.conf${NC}"
         else
-            echo "Warning: No config found for $service"
+            echo -e "${RED}Warning: No config found for $service${NC}"
         fi
     done
 
     rsync -av /usr/bin/ /root/backit/binaries/ --exclude "*.tmp"       # backup binaries
 
-    echo "Completed the backup"
+    echo -e "${YELLOW}Completed the backup${NC}"
 }
 
 malphp() {
-    echo "cleaning up php files"
+    echo -e "${YELLOW}cleaning up php files${NC}\n\n"
     find / -type f -name "index.php" ! -path "/var/www/*" 2>/dev/null | while read -r file; do
         # Backup the file to /root/ with a timestamp
         backup_file="/root/$(basename "$file")_$(date +%F_%T)"
@@ -74,13 +75,13 @@ malphp() {
         rm -f "$file"            # Remove the original file
 
         # Log the action
-        echo "Removed malicious PHP file: $file (Backed up at $backup_file)" | tee -a "$LOGFILE"
+        echo -e "${YELLOW}Removed malicious PHP file: $file (Backed up at $backup_file)${NC}"
     done
-    echo "cleaned up any php"
+    echo "${YELLOW}cleaned up any php${NC}"
 }
 
 findcron() {
-    echo "Scanning for crontab entries..."
+    echo -e "${YELLOW}Scanning for crontab entries...${NC}"
 
     # Locations to check
     locations=("/etc/crontab" "/etc/cron.d/*" "/var/spool/cron/crontabs/*" "/var/spool/cron/*" "/etc/cron.hourly/*" "/etc/cron.daily/*" "/etc/cron.weekly/*" "/etc/cron.monthly/*" "/etc/anacrontab")
@@ -103,29 +104,32 @@ findcron() {
             if [ -n "$content" ]; then
                 echo -e "\n--- User crontab for $user at: $cronfile ---"
                 echo "$content"
+                echo -e "${GREEN}\n --- Crontab finished printing ---${NC}"
             fi
         fi
     done
 
-    echo "crontab scan complete."
+    echo -e "${GREEN}crontab scan complete.${NC}"
 }
 
 firewall_config() {
+    echo -e "${YELLOW}--- Starting to configure firewall rules ---${NC}"
     # Firewall Rules
-    sudo firewall-cmd --new-zone=ccdczone                                           # Creating a new zone
+    sudo firewall-cmd --permanent --new-zone=ccdczone                                           # Creating a new zone
+    sleep(3)
     sudo firewall-cmd --set-default-zone=ccdczone                                   
     sudo firewall-cmd --permanent --zone=ccdczone --add-port=587/tcp,25/tcp         # Ports for SMTP
     sudo firewall-cmd --permanent --zone=ccdczone --add-port=110/tcp,995/tcp        # Ports for Pop3
     sudo firewall-cmd --permanent --zone=ccdczone --add-port=5312/tcp               # Adding ports for SSH
-    sudo firewall-cmd --permanent --add-port=323                                    # Chronyd (NTP)
+    sudo firewall-cmd --permanent --add-port=323/tcp                                    # Chronyd (NTP)
     sudo firewall-cmd --permanent --zone=ccdczone --set-target=DROP                 # Explicitly deny traffic
     sudo firewall-cmd --reload || notify "failed to reload firewalld" >&2           # Reloading the firewall
 
     # Listing all the current rules for debugging.
-    echo "------------"
-    echo "firewall rules:"
+    echo -e "${YELLOW}------------${NC}"
+    echo -e "${BLUE}firewall rules:${NC}"
     firewall-cmd --list-all
-    echo "-------------"
+    echo -e "${YELLOW}------------${NC}"
 }
 
 check_services() {
@@ -135,8 +139,8 @@ check_services() {
     if nc -z localhost $port; then
         echo "$service is running on port $port."
     else
-        notify "failed to find the service running, attempting to start it"
-        sudo systemctl start $service || notify "service failed to start, check its logs and restore it" >&2
+        notify "failed to find $service running, attempting to start it"
+        sudo systemctl start $service || notify "service $service failed to start, check its logs and restore it" >&2
     fi
 }
 
@@ -189,9 +193,9 @@ main() {
     check_services
     ssh_config
 
-    echo "completed all basic hardening"
-    echo 'Please now run "AdvHardening" for your distro'
-    echo "and don't forget to change the password"
+    echo -e "\n----\n${GREEN}completed all basic hardening${NC}"
+    echo -e "${YELLOW}Please now run AdvHardening for your distro${NC}"
+    echo "${YELLOW}and don't forget to change the password${NC}"
 }
 
 main
