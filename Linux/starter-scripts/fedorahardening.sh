@@ -91,7 +91,7 @@ findcron() {
         if [ -f "$loc" ] || [ -d "$loc" ]; then
             content=$(cat "$loc" 2>/dev/null)
             if [ -n "$content" ]; then
-                echo -e "\n--- Found crontab at: $loc ---"
+                echo -e "\n${RED}--- Found crontab at: $loc ---${NC}"
                 echo "$content"
             fi
         fi
@@ -116,12 +116,13 @@ firewall_config() {
     echo -e "${YELLOW}--- Starting to configure firewall rules ---${NC}"
     # Firewall Rules
     sudo firewall-cmd --permanent --new-zone=ccdczone                                           # Creating a new zone
-    sleep(3)
     sudo firewall-cmd --set-default-zone=ccdczone                                   
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=587/tcp,25/tcp         # Ports for SMTP
-    sudo firewall-cmd --permanent --zone=ccdczone --add-port=110/tcp,995/tcp        # Ports for Pop3
+    sudo firewall-cmd --permanent --zone=ccdczone --add-port=587/tcp                # Port for SMTP
+    sudo firewall-cmd --permanent --zone=ccdczone --add-port=25/tcp                 # Ports for SMTP
+    sudo firewall-cmd --permanent --zone=ccdczone --add-port=110/tcp                # Ports for Pop3
+    sudo firewall-cmd --permanent --zone=ccdczone --add-port=995/tcp
     sudo firewall-cmd --permanent --zone=ccdczone --add-port=5312/tcp               # Adding ports for SSH
-    sudo firewall-cmd --permanent --add-port=323/tcp                                    # Chronyd (NTP)
+    sudo firewall-cmd --permanent --add-port=323/tcp                                # Chronyd (NTP)
     sudo firewall-cmd --permanent --zone=ccdczone --set-target=DROP                 # Explicitly deny traffic
     sudo firewall-cmd --reload || notify "failed to reload firewalld" >&2           # Reloading the firewall
 
