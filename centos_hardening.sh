@@ -13,7 +13,7 @@ PRESTASHOP_CONF="/var/www/html/prestashop/config/settings.inc.php" # Replace wit
 
 
 
-# Step 2: Update MySQL root and PrestaShop user's password
+# Update MySQL root and PrestaShop user's password
 echo "Updating MySQL root and PrestaShop user passwords..."
 sudo mysql -u root -p <<EOF
 SET PASSWORD FOR 'root'@'localhost' = PASSWORD('$ROOT_PASSWORD');
@@ -33,7 +33,7 @@ sudo sed -i "s/define('_DB_PASSWD_', .*/define('_DB_PASSWD_', '$PRESTASHOPUSER_P
 echo "Restarting MariaDB and Apache..."
 sudo systemctl restart mariadb httpd
 
-# Step 3: Update PrestaShop admin portal password
+# Update PrestaShop admin portal password
 echo "Updating PrestaShop admin portal password..."
 
 sudo mysql -u root -p$ROOT_PASSWORD <<EOF
@@ -41,7 +41,7 @@ USE prestashop;
 UPDATE ps_employee SET passwd=MD5('$COOKIE_VALUE$NEW_ADMIN_PASSWORD') WHERE email='$ADMIN_EMAIL';
 EOF
 
-# Step 4: Configure firewalld
+# Configure firewalld
 echo "Configuring firewalld..."
 sudo firewall-cmd --set-default-zone=drop
 sudo firewall-cmd --permanent --add-port=80/tcp
@@ -51,7 +51,11 @@ sudo firewall-cmd --reload
 
 echo "Configuration completed successfully."
 
-# Step 5: Check for existing crontabs
+# Disable root SSH login
+sudo sed -i 's/^PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
+
+# Check for existing crontabs
 echo "Checking for existing crontabs for all users..."
 for user in $(cut -f1 -d: /etc/passwd); do
     crontab -u "$user" -l 2>/dev/null | grep -v "^#" | grep -q . && echo "Crontab entries found for user: $user"
@@ -63,6 +67,23 @@ crontab -l 2>/dev/null | grep -v "^#" | grep -q . && echo "Root user has crontab
 
 echo "Crontab check completed."
 
-# Step 7: List all system users
+# Restrict crontab usage
+echo "root" | sudo tee -a /etc/cron.allow
+sudo touch /etc/cron.deny && sudo chmod 600 /etc/cron.deny
+
+# Enforce Strong Password Policy
+echo "Enforcing strong password policy..."
+echo "minlen = 12" | sudo tee -a /etc/security/pwquality.conf
+echo "dcredit = -1" | sudo tee -a /etc/security/pwquality.conf
+echo "ucredit = -1" | sudo tee -a /etc/security/pwquality.conf
+echo "lcredit = -1" | sudo tee -a /etc/security/pwquality.conf
+echo "ocredit = -1" | sudo tee -a /etc/security/pwquality.conf
+
+echo "Password policy enforcement completed."
+
+# List all system users
 echo "Listing all system users..."
 cut -d: -f1 /etc/passwd
+
+# List running services
+systemctl list-units --type=service --state=running
