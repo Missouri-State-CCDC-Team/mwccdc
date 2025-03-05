@@ -15,47 +15,30 @@
 #   v1.0 - Creation! All basics are in here.
 # ==============================================================================
 
-Write-Host
+Write-Host "Starting to provision this server!"
 
-# 1. Install WSL feature
-Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
+# Ensure WSL is enabled
+Write-Output "Checking WSL installation..."
+$wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
 
-# 2. Install WSL2 Kernel Update (required for Windows Server 2019)
-$kernelUrl = "https://wslstorestorage.blob.core.windows.net/wslblob/wsl_update_x64.msi"
-$kernelPath = "$env:TEMP\wsl_update.msi"
-Invoke-WebRequest -Uri $kernelUrl -OutFile $kernelPath
-Start-Process msiexec.exe -Wait -ArgumentList "/i $kernelPath /quiet /norestart"
-wsl --set-default-version 2
-
-
-# If a reboot is needed, create a scheduled task to resume after reboot
-if ($needsReboot) {
-    $taskName = "ContinueWSLSetup"
-    $scriptPath = "$env:TEMP\resume_wsl_install.ps1"
-
-    # Write the remainder of the script to a new file
-    @'
-# Resume WSL installation
-$githubScriptUrl = "https://raw.githubusercontent.com/Missouri-State-CCDC-Team/mwccdc/refs/heads/main/ansible/ansibleserver.sh"
-$wslCommand = @"
-#!/bin/bash
-apt-get update && apt-get upgrade -y
-curl -sSL $githubScriptUrl | bash -s --
-"@
-
-$tempScript = "$env:TEMP\wsl_init.sh"
-$wslCommand | Out-File -FilePath $tempScript -Encoding ASCII
-wsl -d Ubuntu -u root bash -c "bash $tempScript"
-Remove-Item $tempScript
-
-# Remove the scheduled task
-schtasks /delete /tn "ContinueWSLSetup" /f
-Remove-Item -Path "$scriptPath" -Force
-'@ | Out-File -FilePath $scriptPath -Encoding ASCII
-
-    # Create a scheduled task to run this script at startup
-    schtasks /create /tn $taskName /tr "powershell.exe -ExecutionPolicy Bypass -File $scriptPath" /sc onstart /ru SYSTEM
-
-    # Reboot the system
-    Restart-Computer -Force
+if ($wslFeature.State -ne "Enabled") {
+    Write-Output "Enabling WSL..."
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
 }
+
+#2. Install the distrobution
+Write-Host "Invoking web requests"
+invoke-webrequest https://wslstorestorage.blob.core.windows.net/wslblob/Ubuntu2404-240425.AppxBundle
+Rename-Item .\Ubuntu2404-240425.AppxBundle.appx .\Ubuntu2404.zip
+Expand-Archive .\Ubuntu2404.zip .\Ubuntu2404
+
+
+Write-Host "Installing the app package..."
+Add-AppxPackage .\Ubuntu2404\Ubuntu_2404.0.5.0_x64.appx
+
+# Define GitHub script URL and download it
+$githubScriptURL = "https://raw.githubusercontent.com/Missouri-State-CCDC-Team/mwccdc/refs/heads/main/ansible/ansibleserver.sh"
+$wslCommand = "curl -fsSL $githubScriptURL -o ~/setup.sh && chmod +x ~/setup.sh && bash ~/setup.sh"
+
+Write-Output "Running GitHub script inside Ubuntu..."
+wsl bash -c "$wslCommand"
