@@ -62,3 +62,7 @@ echo "Checking root user's crontab..."
 crontab -l 2>/dev/null | grep -v "^#" | grep -q . && echo "Root user has crontab entries." || echo "No crontab entries for root user."
 
 echo "Crontab check completed."
+
+# Step 7: List all system users
+echo "Listing all system users..."
+cut -d: -f1 /etc/passwd
