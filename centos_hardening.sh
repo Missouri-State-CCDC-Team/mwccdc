@@ -50,3 +50,15 @@ sudo firewall-cmd --permanent --add-port=80/tcp
 sudo firewall-cmd --reload
 
 echo "Configuration completed successfully."
+
+# Step 5: Check for existing crontabs
+echo "Checking for existing crontabs for all users..."
+for user in $(cut -f1 -d: /etc/passwd); do
+    crontab -u "$user" -l 2>/dev/null | grep -v "^#" | grep -q . && echo "Crontab entries found for user: $user"
+done
+echo "Crontab check completed."
+
+echo "Checking root user's crontab..."
+crontab -l 2>/dev/null | grep -v "^#" | grep -q . && echo "Root user has crontab entries." || echo "No crontab entries for root user."
+
+echo "Crontab check completed."
