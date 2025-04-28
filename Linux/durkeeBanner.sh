@@ -6,7 +6,7 @@
 # Organization: Missouri State University
 # Version     : 1.0
 # ==============================================================================
-
+# Credit to SpecialNebulae for this gem of a message
 
 # Function to backup existing banner files
 backup_existing_files() {
