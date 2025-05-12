@@ -4,17 +4,19 @@
 # Description : Runs advanced software and hardening on debian based systems.
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 0.9
 # ==============================================================================
 # Usage       : RHAdvancedHardening.sh
 # Notes       :
 #   - Make sure to update the variables as needed to configure the system correctly.
 # ==============================================================================
 # Changelog:
-#   v1 - Fancy file man :)
+#   v1 - Started the file and added configuration
+#   v1.1 - Updated design, the most important part.
 # ==============================================================================
 
 RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\e[0m'       # Sets the colors in use throughout the code
+
+# Set variables to be used throughout the code.
 forwarderScript="https://tinyurl.com/msuforwarder"
 
 
@@ -50,13 +52,14 @@ tripwire() {
 
 }
 
+# Hey mr. zero day hunter, get out :(
+
 enable_auditd_logging() {
     echo -e "${YELLOW}Enabling auditd logging for executed commands...${NC}"
     echo "-a always,exit -F arch=b64 -S execve -k execution" >> /etc/audit/rules.d/audit.rules
     augenrules --load
     systemctl restart auditd
 }
-
 
 login_wall() {
     echo -e "${YELLOW} Currently adding a profile wall to the users in the system for login notifications${NC}"
@@ -84,7 +87,8 @@ fowarder_script() {
     wget $forwarderScript -o splunkforward.sh
     chmod +x ./splunkforward.sh
     
-    echo "forwarder script installed please configure it and run."
+    echo "Splunk forwarder script has been setup to be run."
+    echo "you can use ./splunkforward.sh to run it."
 }
 
 main() {

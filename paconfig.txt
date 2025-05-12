@@ -7,7 +7,7 @@
 # Bennett Riegel
 # March 2025
 
-printf "Starting housemd script\n"
+printf "Starting paconfig script\n"
 
 # get team ip
 printf "Enter team IP number should be between (21-40): "

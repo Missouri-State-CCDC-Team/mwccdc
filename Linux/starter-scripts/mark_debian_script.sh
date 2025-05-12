@@ -10,7 +10,7 @@ fi
 # -------------------------------
 # 1. Change Passwords
 # -------------------------------
-NEW_PASSWORD="Orhon9b@22hunter"
+NEW_PASSWORD="example-password"
 
 # Change the root password
 echo "Changing root password..."

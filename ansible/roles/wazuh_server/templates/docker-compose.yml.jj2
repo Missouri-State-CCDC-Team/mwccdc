@@ -1,0 +1,84 @@
+version: '3'
+
+services:
+  wazuh.indexer:
+    image: wazuh/wazuh-indexer:{{ wazuh_version }}
+    hostname: {{ wazuh_indexer_container_name }}
+    container_name: {{ wazuh_indexer_container_name }}
+    restart: {{ wazuh_container_restart_policy }}
+    ports:
+      - "{{ wazuh_indexer_port }}:9200"
+    environment:
+      - "OPENSEARCH_JAVA_OPTS=-Xms{{ wazuh_indexer_heap_size }} -Xmx{{ wazuh_indexer_heap_size }}"
+      - "bootstrap.memory_lock=true"
+      - "path.repo=/usr/share/opensearch/backup"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - {{ wazuh_docker_dir }}/volumes/wazuh-indexer/data:/var/lib/opensearch
+      - {{ wazuh_docker_dir }}/volumes/wazuh-indexer/config:/usr/share/opensearch/config
+      - {{ wazuh_docker_dir }}/certs/wazuh-indexer/wazuh-indexer.pem:/usr/share/opensearch/config/certs/wazuh-indexer.pem
+      - {{ wazuh_docker_dir }}/certs/wazuh-indexer/wazuh-indexer-key.pem:/usr/share/opensearch/config/certs/wazuh-indexer-key.pem
+      - {{ wazuh_docker_dir }}/certs/root-ca.pem:/usr/share/opensearch/config/certs/root-ca.pem
+    networks:
+      - wazuh-network
+
+  wazuh.manager:
+    image: wazuh/wazuh-manager:{{ wazuh_version }}
+    hostname: {{ wazuh_manager_container_name }}
+    container_name: {{ wazuh_manager_container_name }}
+    restart: {{ wazuh_container_restart_policy }}
+    ports:
+      - "{{ wazuh_manager_port }}:1514"
+      - "{{ wazuh_registration_port }}:1515"
+      - "{{ wazuh_api_port }}:55000"
+    environment:
+      - INDEXER_URL=https://{{ wazuh_indexer_container_name }}:9200
+      - INDEXER_USERNAME=admin
+      - INDEXER_PASSWORD=SecurePassword
+      - FILEBEAT_SSL_VERIFICATION=none
+    volumes:
+      - {{ wazuh_docker_dir }}/volumes/wazuh-manager/data:/var/ossec/data
+      - {{ wazuh_docker_dir }}/volumes/wazuh-manager/config:/var/ossec/etc
+      - {{ wazuh_docker_dir }}/certs/wazuh-manager/wazuh-manager.pem:/var/ossec/etc/certs/filebeat.pem
+      - {{ wazuh_docker_dir }}/certs/wazuh-manager/wazuh-manager-key.pem:/var/ossec/etc/certs/filebeat-key.pem
+      - {{ wazuh_docker_dir }}/certs/root-ca.pem:/var/ossec/etc/certs/root-ca.pem
+    depends_on:
+      - wazuh.indexer
+    networks:
+      - wazuh-network
+
+  wazuh.dashboard:
+    image: wazuh/wazuh-dashboard:{{ wazuh_version }}
+    hostname: {{ wazuh_dashboard_container_name }}
+    container_name: {{ wazuh_dashboard_container_name }}
+    restart: {{ wazuh_container_restart_policy }}
+    ports:
+      - "{{ wazuh_dashboard_port }}:5601"
+    environment:
+      - INDEXER_USERNAME=admin
+      - INDEXER_PASSWORD=SecurePassword
+      - WAZUH_API_URL=https://{{ wazuh_manager_container_name }}:55000
+      - API_USERNAME={{ wazuh_admin_user }}
+      - API_PASSWORD={{ wazuh_admin_password }}
+      - OPENSEARCH_JAVA_OPTS=-Xms{{ wazuh_dashboard_heap_size }} -Xmx{{ wazuh_dashboard_heap_size }}
+    volumes:
+      - {{ wazuh_docker_dir }}/volumes/wazuh-dashboard/config:/usr/share/opensearch-dashboards/config
+      - {{ wazuh_docker_dir }}/certs/wazuh-dashboard/wazuh-dashboard.pem:/usr/share/opensearch-dashboards/certs/wazuh-dashboard.pem
+      - {{ wazuh_docker_dir }}/certs/wazuh-dashboard/wazuh-dashboard-key.pem:/usr/share/opensearch-dashboards/certs/wazuh-dashboard-key.pem
+      - {{ wazuh_docker_dir }}/certs/root-ca.pem:/usr/share/opensearch-dashboards/certs/root-ca.pem
+    depends_on:
+      - wazuh.indexer
+      - wazuh.manager
+    networks:
+      - wazuh-network
+
+networks:
+  wazuh-network:
+    driver: bridge
+    

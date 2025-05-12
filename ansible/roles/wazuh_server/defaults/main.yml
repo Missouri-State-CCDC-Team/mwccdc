@@ -1,0 +1,47 @@
+---
+# ansible/roles/wazuh-server/defaults/main.yml
+
+# Wazuh version
+wazuh_version: "4.5.2"
+
+# Docker directories
+wazuh_docker_dir: "/opt/wazuh-docker"
+
+# Wazuh component ports
+wazuh_api_port: 55000
+wazuh_manager_port: 1514
+wazuh_registration_port: 1515
+wazuh_dashboard_port: 443
+wazuh_indexer_port: 9200
+
+# Admin user for Wazuh dashboard
+wazuh_admin_user: "admin"
+wazuh_admin_password: "SecurePassword123!"
+
+# Wazuh indexer settings
+wazuh_indexer_heap_size: "1g"
+wazuh_indexer_nodes: 1
+
+# Wazuh dashboard settings
+wazuh_dashboard_heap_size: "1g"
+
+# Wazuh manager settings
+wazuh_manager_heap_size: "1g"
+
+# Security settings
+wazuh_certificate_country: "US"
+wazuh_certificate_state: "Missouri"
+wazuh_certificate_locality: "Springfield"
+wazuh_certificate_organization: "CCDC Team"
+wazuh_certificate_org_unit: "Security"
+wazuh_certificate_common_name: "wazuh-server"
+wazuh_certificate_admin_name: "admin"
+wazuh_certificate_admin_password: "admin"
+
+# Container names 
+wazuh_indexer_container_name: "wazuh-indexer"
+wazuh_manager_container_name: "wazuh-manager"
+wazuh_dashboard_container_name: "wazuh-dashboard"
+
+# Restart policy
+wazuh_container_restart_policy: "unless-stopped"

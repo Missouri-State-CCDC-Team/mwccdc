@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Certificate generation script for Wazuh Docker deployment
+# This is templated and will be populated by Ansible
+
+# Set certificate parameters
+COUNTRY="{{ wazuh_certificate_country }}"
+STATE="{{ wazuh_certificate_state }}"
+LOCALITY="{{ wazuh_certificate_locality }}"
+ORGANIZATION="{{ wazuh_certificate_organization }}"
+ORG_UNIT="{{ wazuh_certificate_org_unit }}"
+COMMON_NAME="{{ wazuh_certificate_common_name }}"
+PASSWORD="{{ wazuh_certificate_admin_password }}"
+
+CERT_DIR="$(pwd)"
+ROOT_CA="root-ca"
+HOSTNAMES=("{{ wazuh_indexer_container_name }}" "{{ wazuh_manager_container_name }}" "{{ wazuh_dashboard_container_name }}")
+
+# Function to generate root CA
+generate_root_ca() {
+  echo "Generating root CA..."
+  
+  # Generate private key
+  openssl genrsa -out $ROOT_CA.key 4096
+  
+  # Generate root certificate
+  openssl req -x509 -new -nodes \
+    -key $ROOT_CA.key \
+    -sha256 -days 1095 \
+    -out $ROOT_CA.pem \
+    -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION/OU=$ORG_UNIT/CN=$COMMON_NAME"
+    
+  echo "Root CA generated successfully."
+}
+
+# Function to generate certificates for each component
+generate_component_cert() {
+  local component=$1
+  echo "Generating certificate for $component..."
+  
+  mkdir -p "$component"
+  
+  # Generate private key
+  openssl genrsa -out "$component/$component-key.pem" 4096
+  
+  # Generate CSR
+  openssl req -new \
+    -key "$component/$component-key.pem" \
+    -out "$component/$component.csr" \
+    -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION/OU=$ORG_UNIT/CN=$component"
+  
+  # Create config for SAN
+  cat > "$component/$component.cnf" <<EOF
+[ req ]
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+prompt = no
+
+[ req_distinguished_name ]
+CN = $component
+
+[ req_ext ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = $component
+DNS.2 = localhost
+IP.1 = 127.0.0.1
+EOF
+  
+  # Generate certificate
+  openssl x509 -req \
+    -in "$component/$component.csr" \
+    -CA $ROOT_CA.pem \
+    -CAkey $ROOT_CA.key \
+    -CAcreateserial \
+    -out "$component/$component.pem" \
+    -extfile "$component/$component.cnf" \
+    -extensions req_ext \
+    -days 1095
+    
+  echo "Certificate for $component generated successfully."
+}
+
+# Generate certificates
+generate_root_ca
+
+for host in "${HOSTNAMES[@]}"; do
+  generate_component_cert "$host"
+done
+
+# Create tar archive with all certificates
+echo "Creating certificate archive..."
+tar -cf wazuh-certificates.tar \
+  $ROOT_CA.key $ROOT_CA.pem \
+  $(find wazuh-* -type f | xargs)
+
+echo "Certificate generation completed. Archive created at: $CERT_DIR/wazuh-certificates.tar"

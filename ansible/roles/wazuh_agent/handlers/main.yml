@@ -1,0 +1,12 @@
+---
+- name: restart wazuh-agent
+  ansbile.builtin.service:
+    name: "{{ wazuh_agent_service }}"
+    state: restarted
+  when: ansible_os_family != "Windows"
+
+- name: restart wazuh-agent windows
+  ansbile.builtin.win_service:
+    name: "{{ wazuh_agent_service }}"
+    state: restarted
+  when: ansible_os_family == "Windows"

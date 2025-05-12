@@ -1,0 +1,44 @@
+---
+# ansible/roles/wazuh-agent/vars/Windows.yml
+
+# Package information - using MSI installer for Windows
+wazuh_agent_package: "wazuh-agent-{{ wazuh_agent_version }}-1.msi"
+wazuh_agent_download_url: "https://packages.wazuh.com/{{ wazuh_agent_repo_version }}/windows/wazuh-agent-{{ wazuh_agent_version }}-1.msi"
+
+# Configuration paths
+wazuh_agent_config_dir: "C:\\Program Files (x86)\\ossec-agent"
+wazuh_agent_binary: "C:\\Program Files (x86)\\ossec-agent\\agent-auth.exe"
+wazuh_agent_service: "WazuhSvc"
+
+# Windows-specific logs to monitor
+wazuh_agent_windows_logs:
+  - { name: "Application", query: "" }
+  - { name: "Security", query: "" }
+  - { name: "System", query: "" }
+  - { name: "Microsoft-Windows-PowerShell/Operational", query: "" }
+  - { name: "Microsoft-Windows-Sysmon/Operational", query: "" }
+  - { name: "Windows PowerShell", query: "" }
+  - { name: "Microsoft-Windows-Windows Defender/Operational", query: "" }
+  - { name: "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational", query: "" }
+  - { name: "Microsoft-Windows-TerminalServices-LocalSessionManager/Operational", query: "" }
+
+# Windows registry keys to monitor
+wazuh_agent_windows_registry_keys:
+  - { path: "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnce", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\RunService", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\RunOnceService", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Services", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\Security", check_all: "yes" }
+  - { path: "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon", check_all: "yes" }
+
+# Windows-specific monitored files
+wazuh_agent_windows_monitored_files:
+  - { path: "C:\\Windows\\System32\\drivers\\etc\\hosts", check_all: "yes" }
+  - { path: "C:\\Windows\\System32\\drivers\\etc", check_all: "yes" }
+  - { path: "C:\\Windows\\System32\\Wbem", check_all: "yes" }
+  - { path: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0", check_all: "yes" }
+  - { path: "C:\\Windows\\SysWOW64\\WindowsPowerShell\\v1.0", check_all: "yes" }
+  - { path: "C:\\Windows\\Tasks", check_all: "yes" }
+  - { path: "C:\\Windows\\Temp", check_all: "yes" }

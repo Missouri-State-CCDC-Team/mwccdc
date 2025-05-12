@@ -2,7 +2,7 @@
 # ==============================================================================
 # Script Name : ubuntuwebharden.sh
 # Description : Configure everything from A to B for Ubuntu 18.04 Web Server
-# Author      : Tyler Olson (Modified for Ubuntu)
+# Author      : Tyler Olson
 # Organization: Missouri State University
 # ==============================================================================
 # Usage       : ubuntuwebharden.sh

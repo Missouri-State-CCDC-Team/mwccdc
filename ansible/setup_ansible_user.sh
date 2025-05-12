@@ -10,9 +10,7 @@
 # Notes       :
 #   - This will go in and create a user, asking for a password for the user. 
 # ==============================================================================
-# Changelog:
-#   v1.0 - Creation! All basics are in here.
-# ==============================================================================
+
 set -e
 
 # Usage check

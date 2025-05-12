@@ -12,6 +12,7 @@
 # ==============================================================================
 # Changelog:
 #   v1 - Major bug fixes and additions of colors to the file
+#   v1.1 - SGVsbG8gZnJpZW5kLCB5b3Ugc2VlbSBsb3N0Pw==
 # ==============================================================================
 
 # Check if added as root
@@ -26,7 +27,6 @@ newUsername='example'
 services=("postfix" "dovecot")
 
 RED=$'\e[0;31m'; GREEN=$'\e[0;32m'; YELLOW=$'\e[0;33m'; BLUE=$'\e[0;34m'; NC=$'\e[0m'       # Sets the colors in use throughout the code
-
 
 # Functions:
 notify() { echo -e "${RED}$1${NC}"; }
@@ -98,6 +98,7 @@ malphp() {
         rm -f "$file"            # Remove the original file
 
         # Log the action
+        echo -e "${YELLOW}Removed malicious PHP file: $file (Backed up at $backup_file)${NC}" >> /root/malphp.log
         echo -e "${YELLOW}Removed malicious PHP file: $file (Backed up at $backup_file)${NC}"
     done
     echo "${YELLOW}cleaned up any php${NC}"

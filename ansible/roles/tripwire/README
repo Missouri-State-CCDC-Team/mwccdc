@@ -1,0 +1,1 @@
+ansible-vault encrypt_string 'SuperSecretPassphrase' --name 'tripwire_local_key_pass'

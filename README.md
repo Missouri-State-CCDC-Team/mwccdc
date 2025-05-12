@@ -2,6 +2,8 @@
 
 This repository is the central resource for the Missouri State Collegiate Cyber Defense Competition (CCDC) team. It contains scripts, configurations, templates, and documentation used by the team to prepare for, manage, and report on competition events.
 
+and uh, our famous competition timer: https://github.com/noahapursell/comp-timer
+
 ## Overview
 
 The repository is organized to support different aspects of the team’s operations during competitions. The contents include:
@@ -26,27 +28,6 @@ The repository is organized to support different aspects of the team’s operati
 └── README.md                 # This README file
 ```
 
-## Getting Started
-
-To get started with these resources:
-
-1. **Clone the Repository:**  
-   ```bash
-   git clone https://github.com/Missouri-State-CCDC-Team/mwccdc.git
-   ```
-2. **Explore the Directories:**  
-   Review the folder structure and open the relevant files (scripts, templates, playbooks) to understand how they are used during competitions.
-
-## Contributing
-
-This repository is maintained by the Missouri State CCDC team. If you are a team member and wish to contribute:
-- Fork the repository or create a new branch.
-- Follow the team’s coding and documentation standards.
-- Submit a pull request for review.
-
-*Note: External contributions are not currently accepted. For questions or suggestions, please contact the team maintainers.*
-
 ## License
 
 This repository is provided for the internal use of the Missouri State CCDC team. If you require further information regarding licensing or usage rights, please contact the team directly.
-

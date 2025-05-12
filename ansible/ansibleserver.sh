@@ -26,12 +26,8 @@ pre-setup() {
 }
 
 galaxy-setup() {
-    ansible-galaxy collection install devsec.hardening
-    ansible-galaxy role install robertdebock.fail2ban
-    ansible-galaxy role install geerlingguy.ntp
-    ansible-galaxy role install geerlingguy.security
+    ansible-galaxy install -r requirements.yml || log "Failed to install the requirements" 
 }
-# https://robertdebock.nl/how-to-use-these-roles.html and https://github.com/robertdebock/ansible-role-fail2ban foir using fail2ban
 
 
 github() {

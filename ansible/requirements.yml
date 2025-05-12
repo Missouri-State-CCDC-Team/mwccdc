@@ -1,0 +1,19 @@
+---
+# Requirements file for Missouri State CCDC Team
+# use `ansible-galaxy install -r requirements.yml`
+
+# Collections
+collections:
+  - name: devsec.hardening
+    version: "latest" 
+
+# Roles
+roles:
+  - name: robertdebock.fail2ban
+    version: "latest"  
+    
+  - name: geerlingguy.ntp
+    version: "latest"  
+    
+  - name: geerlingguy.security
+    version: "latest"  

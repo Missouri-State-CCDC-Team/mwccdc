@@ -1,0 +1,12 @@
+---
+# Example playbook to install and configure Splunk Universal Forwarder using our role
+- name: Install Splunk Universal Forwarder
+  hosts: all
+  become: true
+  vars:
+    # Override default variables as needed
+    splunk_indexer_ip: "172.20.241.20"  # Your Splunk server IP
+    splunk_admin_password: "YourSecurePassword123!"
+    
+  roles:
+    - splunk_forwarder

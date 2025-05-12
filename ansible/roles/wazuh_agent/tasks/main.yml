@@ -1,0 +1,123 @@
+---
+# Tasks file to installl the wazuh-agent to fucking anything
+
+- name: Include OS-specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: Set Wazuh agent package facts
+  set_fact:
+    wazuh_agent_package_name: "{{ wazuh_agent_package }}"
+    wazuh_manager_address: "{{ wazuh_server_ip }}"
+
+# Common tasks for all systems
+- name: Create Wazuh directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  loop:
+    - "{{ wazuh_agent_config_dir }}"
+    - "/var/log/wazuh-agent"
+    - "/var/run/wazuh-agent"
+
+# Debian/Ubuntu specific tasks
+- name: Install Wazuh Agent on Debian/Ubuntu
+  block:
+    - name: Add Wazuh repository GPG key
+      apt_key:
+        url: "https://packages.wazuh.com/key/GPG-KEY-WAZUH"
+        state: present
+      register: apt_key_result
+      until: apt_key_result is succeeded
+      retries: 3
+      delay: 5
+
+    - name: Add Wazuh repository
+      apt_repository:
+        repo: "deb https://packages.wazuh.com/{{ wazuh_agent_repo_version }}/apt/ stable main"
+        state: present
+        filename: wazuh
+        update_cache: yes
+
+    - name: Install Wazuh agent package
+      apt:
+        name: "{{ wazuh_agent_package_name }}"
+        state: present
+        update_cache: yes
+      register: install_result
+      until: install_result is succeeded
+      retries: 3
+      delay: 5
+  when: ansible_os_family == "Debian"
+
+# RHEL/CentOS specific tasks
+- name: Install Wazuh Agent on RHEL/CentOS
+  block:
+    - name: Add Wazuh repository
+      yum_repository:
+        name: wazuh
+        description: Wazuh repository
+        baseurl: "https://packages.wazuh.com/{{ wazuh_agent_repo_version }}/yum/"
+        gpgkey: "https://packages.wazuh.com/key/GPG-KEY-WAZUH"
+        gpgcheck: yes
+        enabled: yes
+
+    - name: Install Wazuh agent package
+      yum:
+        name: "{{ wazuh_agent_package_name }}"
+        state: present
+      register: install_result
+      until: install_result is succeeded
+      retries: 3
+      delay: 5
+  when: ansible_os_family == "RedHat"
+
+# Configure the agent
+- name: Configure Wazuh agent (ossec.conf)
+  template:
+    src: ossec.conf.j2
+    dest: "{{ wazuh_agent_config_dir }}/ossec.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart wazuh-agent
+
+# Create local_internal_options.conf file
+- name: Configure Wazuh agent (local_internal_options.conf)
+  template:
+    src: local_internal_options.conf.j2
+    dest: "{{ wazuh_agent_config_dir }}/local_internal_options.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart wazuh-agent
+
+# Register agent with the Wazuh manager
+- name: Register Wazuh agent
+  command: "{{ wazuh_agent_binary }} -m {{ wazuh_manager_address }} -p {{ wazuh_manager_port }} {{ '-v' if wazuh_agent_verify_host_cert else '' }} {{ '-x' if wazuh_agent_verify_manager_cert else '' }} {{ '-P ' + wazuh_registration_password if wazuh_registration_password else '' }} -A {{ inventory_hostname }}"
+  args:
+    creates: "{{ wazuh_agent_config_dir }}/client.keys"
+  notify: restart wazuh-agent
+  when: wazuh_agent_register
+
+# Enable and start Wazuh agent service
+- name: Enable Wazuh agent service
+  service:
+    name: "{{ wazuh_agent_service }}"
+    enabled: yes
+    state: started
+  when: wazuh_agent_service_enabled | bool
+
+# Add to Windows firewall if needed
+- name: Add Wazuh agent to Windows Firewall
+  win_firewall_rule:
+    name: Wazuh Agent
+    localport: 1514
+    direction: in
+    protocol: tcp
+    action: allow
+    enabled: yes
+    state: present
+  when: ansible_os_family == "Windows"

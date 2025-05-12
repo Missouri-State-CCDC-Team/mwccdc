@@ -1,4 +1,4 @@
 # Ansible
-- This directory is intednded to automate tasks inside the competition environemnt. 
+- This was really revamped in the 2025 school year to include lots more automation for the servers. 
 
-We have not tested this much, so good luck if you decide to use it.
+Red team if your reading this GET OUT I don't like you :( 

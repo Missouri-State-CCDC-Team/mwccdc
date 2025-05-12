@@ -1,0 +1,36 @@
+- name: Remove AmbientCapabilities line from service file
+  lineinfile:
+    path: /etc/systemd/system/SplunkForwarder.service
+    regexp: '^AmbientCapabilities='
+    state: absent
+  become: true
+  notify: reload systemd
+
+- name: Create splunk-fix service file
+  copy:
+    content: |
+      [Unit]
+      Description=Splunk Fix Service
+      Before=network-online.target
+      Before=multi-user.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/bin/bash -c "/usr/bin/sed -i '/AmbientCapabilities/d' /etc/systemd/system/SplunkForwarder.service"
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+    dest: /etc/systemd/system/splunk-fix.service
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+  notify: reload systemd
+
+- name: Enable and start splunk-fix service
+  systemd:
+    name: splunk-fix
+    enabled: yes
+    state: started
+  become: true

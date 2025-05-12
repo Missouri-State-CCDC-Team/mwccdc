@@ -1,0 +1,9 @@
+- name: Create inputs.conf for monitoring
+  template:
+    src: inputs.conf.j2
+    dest: "{{ splunk_install_dir }}/etc/system/local/inputs.conf"
+    owner: splunk
+    group: splunk
+    mode: '0644'
+  become: true
+  notify: restart splunk
