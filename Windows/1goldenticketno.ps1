@@ -1,7 +1,7 @@
 # ==============================================================================
 # Script Name : goldenticketNo.ps1
 # Description : Red team told us they already had a golden ticket for our AD,
-#               I no like that so rotate creds
+#               I no like that so rotate creds and make it all super secure right
 # Author      : Tyler Olson
 # Organization: Missouri State University
 # Version     : 1.0

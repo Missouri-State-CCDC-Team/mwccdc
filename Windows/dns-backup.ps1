@@ -1,7 +1,17 @@
-# Active Directory DNS Backup Script
-# Purpose: Create comprehensive backups of AD-integrated DNS configuration
-# Usage: Run as Administrator on a Domain Controller
-# Author: MSU CCDC Team
+# ==============================================================================
+# Script Name : ad-dns-backup.ps1
+# Description : Backs up Active Directory DNS configuration 
+#               created by ad-dns-backup.ps1. Includes DNS zones, records,
+#               forwarders, and server settings.
+# Author      : Tyler Olson
+# Organization: Missouri State University
+# Version     : 1.1
+# ==============================================================================
+# Usage       : .\ad-dns-backup.ps1 [backup path] [compress?]
+# Notes       :
+#   - Must be run with administrative privileges on a Domain Controller
+
+# ==============================================================================
 
 # Parameters
 param(

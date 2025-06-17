@@ -4,11 +4,11 @@
 # Description : Durkee Banner
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.0
+# Version     : 1.1 - more durkee
 # ==============================================================================
 # Credit to SpecialNebulae for this gem of a message
 
-# Function to backup existing banner files
+# Taking a backup of existing /etc/issue files
 backup_existing_files() {
     local timestamp=$(date +%Y%m%d_%H%M%S)
     
@@ -31,17 +31,22 @@ check_root() {
 # Function to create banner content
 create_banner() {
     cat << 'EOF' > /tmp/banner_content
-************************************************************************************************************************
-* Did you ever hear the tragedy of Darth Durkee the Wise?                                                              *
-* I thought not. It’s not a story the Red Team would tell you.                                                         *
-* It’s a Sith legend. Darth Durkee was a Dark Lord of the Sith,                                                        *
-* so powerful and so wise he could use the Force to influence the packets to create life…                              *
-* He had such a knowledge of the dark side that he could even keep the servers he cared about from getting Nyan Catted.*
-* The dark side of the Force is a pathway to many abilities some consider to be unnatural.                             *
-* He became so powerful… the only thing he was afraid of was losing his power,                                         *
-* which eventually, of course, he did. Unfortunately, he taught his apprentice everything he knew,                     *
-* then his apprentice killed his server in his sleep. Ironic. He could save others servers from death, but not his.    *
-************************************************************************************************************************
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ║
+║ ░                                                                                                                ░ ║
+║ ░  Did you ever hear the tragedy of Darth Durkee the Wise?                                                       ░ ║
+║ ░  I thought not. It’s not a story the Red Team would tell you.                                                  ░ ║
+║ ░  It’s a Sith legend. Darth Durkee was a Dark Lord of the Sith,                                                 ░ ║
+║ ░  so powerful and so wise he could use the Force to influence the packets to create life…                       ░ ║
+║ ░  He had such a knowledge of the dark side that he could even keep the servers he cared about from Nyan Catted. ░ ║
+║ ░  The dark side of the Force is a pathway to many abilities some consider to be unnatural.                      ░ ║
+║ ░  He became so powerful… the only thing he was afraid of was losing his power,                                  ░ ║
+║ ░  which eventually, of course, he did. Unfortunately, he taught his apprentice everything he knew,              ░ ║
+║ ░  then his apprentice killed his server in his sleep. Ironic.                                                   ░ ║
+║ ░  He could save others' servers from death, but not his.                                                        ░ ║
+║ ░                                                                                                                ░ ║
+║ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 EOF
 }
 

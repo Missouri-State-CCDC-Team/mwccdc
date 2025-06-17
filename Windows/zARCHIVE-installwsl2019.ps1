@@ -13,6 +13,7 @@
 # ==============================================================================
 # Changelog:
 #   v1.0 - Creation! All basics are in here.
+#   v1.1 - Script archived due to persistent issues with the automated install.
 # ==============================================================================
 
 Write-Host "Starting to provision this server!"

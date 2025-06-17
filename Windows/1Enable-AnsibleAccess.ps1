@@ -1,9 +1,10 @@
 # ==============================================================================
 # Script Name : enableAnsibleAccess.ps1
-# Description : open a hole. but not for long....
+# Description : open a hole to allow for ansible to reach the system.
+#               With limits of course, can't create too much of a risk
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.0
+# Version     : 1.1
 # ==============================================================================
 
 param (

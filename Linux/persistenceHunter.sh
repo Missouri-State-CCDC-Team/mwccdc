@@ -1,0 +1,86 @@
+#!/bin/bash
+# Just because putting in a banner is SUPER common I figured  I'd send her early 
+# ==============================================================================
+# Script Name : huntwabbits.sh
+# Description : Thunt wabbits in the system, specifically persistence in linux.
+# Author      : Tyler Olson
+# Organization: Missouri State University
+# Version     : 1.0
+# ==============================================================================
+# Usage       : ./huntwabbits.sh
+# Notes       :
+#   - If you don't see it here red team, don't worry. I still check it - tyler
+# ==============================================================================
+# Changelog:
+#   v1.0 - Creation! All basics are in here.
+# ==============================================================================
+
+#!/bin/bash
+
+echo -e "\n=== Linux Persistence Check ==="
+
+# --- Cron Jobs ---
+echo -e "\n--- Cron Jobs ---"
+for user in $(cut -f1 -d: /etc/passwd); do
+    crontab -l -u $user 2>/dev/null | sed "s/^/[$user] /"
+done
+
+echo -e "\n--- System Cron Directories ---"
+for dir in /etc/cron.*; do
+    echo -e "\n$dir"
+    ls -lh $dir 2>/dev/null
+done
+
+# --- Systemd Services ---
+echo -e "\n--- Systemd User Services ---"
+for userhome in /home/*; do
+    username=$(basename "$userhome")
+    if [ -d "$userhome/.config/systemd/user" ]; then
+        echo -e "\n[$username] ~/.config/systemd/user/"
+        find "$userhome/.config/systemd/user" -name '*.service'
+    fi
+done
+
+echo -e "\n--- Systemd System Services (Enabled) ---"
+systemctl list-unit-files --state=enabled | grep '\.service'
+
+# --- init.d Scripts ---
+echo -e "\n--- init.d Scripts ---"
+/bin/ls -lh /etc/init.d/ 2>/dev/null
+
+# --- rc.local ---
+echo -e "\n--- rc.local ---"
+if [ -f /etc/rc.local ]; then
+    cat /etc/rc.local
+else
+    echo "No rc.local file found."
+fi
+
+# --- Bash Profiles and Autostarts ---
+echo -e "\n--- .bashrc / .profile / .bash_profile ---"
+for home in /home/*; do
+    user=$(basename "$home")
+    for file in .bashrc .profile .bash_profile; do
+        if [ -f "$home/$file" ]; then
+            echo -e "\n[$user] $file"
+            grep -Ev '^#|^$' "$home/$file"
+        fi
+    done
+done
+
+# --- XDG Autostart ---
+echo -e "\n--- XDG Autostart Entries ---"
+for home in /home/*; do
+    user=$(basename "$home")
+    if [ -d "$home/.config/autostart" ]; then
+        echo -e "\n[$user] ~/.config/autostart/"
+        ls -lh "$home/.config/autostart"
+        grep -H '^Exec=' "$home/.config/autostart/"*.desktop 2>/dev/null
+    fi
+done
+
+# --- At Jobs ---
+echo -e "\n--- at Jobs ---"
+atq 2>/dev/null || echo "at daemon not active or no jobs"
+
+echo -e "\n=== End of Check ==="
