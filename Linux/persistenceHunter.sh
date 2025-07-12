@@ -25,6 +25,11 @@ for user in $(cut -f1 -d: /etc/passwd); do
     crontab -l -u $user 2>/dev/null | sed "s/^/[$user] /"
 done
 
+# --- User Cron Spools ---
+echo -e "\n--- User Cron Spools in /var/spool/cron/ ---"
+ls -lh /var/spool/cron/ 2>/dev/null
+
+
 echo -e "\n--- System Cron Directories ---"
 for dir in /etc/cron.*; do
     echo -e "\n$dir"
@@ -68,6 +73,15 @@ for home in /home/*; do
     done
 done
 
+# --- System-wide Profile Scripts ---
+echo -e "\n--- /etc/profile and /etc/profile.d/ ---"
+grep -Ev '^#|^$' /etc/profile 2>/dev/null
+ls -lh /etc/profile.d/ 2>/dev/null
+
+# --- PAM Configuration ---
+echo -e "\n--- PAM Configuration ---"
+grep -r 'pam_exec' /etc/pam.d/ 2>/dev/null
+
 # --- XDG Autostart ---
 echo -e "\n--- XDG Autostart Entries ---"
 for home in /home/*; do
@@ -82,5 +96,9 @@ done
 # --- At Jobs ---
 echo -e "\n--- at Jobs ---"
 atq 2>/dev/null || echo "at daemon not active or no jobs"
+
+# --- Upstart Jobs ---
+echo -e "\n--- Upstart Jobs (/etc/init/*.conf) ---"
+ls -lh /etc/init/*.conf 2>/dev/null
 
 echo -e "\n=== End of Check ==="
