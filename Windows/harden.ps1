@@ -1,17 +1,22 @@
 # ==============================================================================
 # Script Name : harden.ps1
-# Description : Invokes all the applicable base hardening scripts in this
-#               directory.
+# Description : Invokes all the applicable base hardening scripts for windows
+#               Server
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.0
+# Version     : 1.1
 # ==============================================================================
 
+# Logging for this script
 $LogFile = "C:\Logs\MasterHardening_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 $LogDir = Split-Path $LogFile -Parent
 if (-not (Test-Path $LogDir)) {
     New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
 }
+
+# Script paths
+$GoldenTicketScript = 1goldenticketno.ps1
+$DisableRemotingScript = 1stopRemoting.ps1
 
 function Write-Log {
     param (
@@ -42,7 +47,6 @@ function Invoke-Script {
     # Here probably should test to see if script exits
 
     # Write the log of start of execution
-
     Write-Log "Executing: $Description" "INFO"
 
     try {
@@ -96,12 +100,17 @@ if (-not $success) {
     Write-Log "Remote management disabling failed or had warnings" "WARNING"
 }
 
+# 2. Disable alll legacy protocols
+$success = Invoke-SecurityScript -ScriptPath $DisableRemotingScript -Description "Disabling Remote Management"
+if (-not $success) {
+    Write-Log "Remote management disabling failed or had warnings" "WARNING"
+}
+
 Write-Host ""
 Write-Host "==================================================================" -ForegroundColor Cyan
 Write-Host "                    Hardening Server Summary                      " -ForegroundColor Cyan
 Write-Host "==================================================================" -ForegroundColor Cyan
-Write-Host "Invoked several scripts all doing different things"
-Write-Host "Sorry I'm not writing it all here."
+Write-Host "Invvoked Security Scripts on windows, See C:\Logs for any errors"
 Write-Host "NEXT TASKS:"
 Write-Host " 1. CHANGE ADMINISTRATOR PASSWORD ASAP"
 Write-Host "==================================================================" -ForegroundColor Cyan

@@ -1,13 +1,11 @@
 # ==============================================================================
-# Script Name : stopRemoting.ps1
+# Script Name : disableLegacyProtocols.ps1
 # Description : Disables the legacy protocols that are used in AD for more
 #               Secure configuration versions 
 # Author      : Tyler Olson
 # Organization: Missouri State University
 # Version     : 1.0
 # ==============================================================================
-# Usage       : ./secure-remoting.ps1 -AllowedIP "192.168.1.10"
-# Notes       :
 #   - Bad bad SMB 1
 # ==============================================================================
 

@@ -1,0 +1,24 @@
+--- 
+- name: Harden Debian Servers
+  host: Debian
+  become: true
+  vars: 
+    username
+    new_username
+    services
+    sshPort
+  tasks:
+  # Software
+    - name: Update and install required software 
+      ansible.builtin.package:
+        update_cache: yes
+        upgrade: yes
+        name: #UNABLE TO COPY ATM
+        state: present
+    
+    - name: Change the password of the root user
+
+    - name: Backup
+      ansible.builtin.archive:
+        src:
+        dest:

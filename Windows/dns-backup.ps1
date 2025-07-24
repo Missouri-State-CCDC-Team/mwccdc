@@ -5,15 +5,13 @@
 #               forwarders, and server settings.
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.1
+# Version     : 1.2 - Code Review 07/23/25
 # ==============================================================================
 # Usage       : .\ad-dns-backup.ps1 [backup path] [compress?]
 # Notes       :
 #   - Must be run with administrative privileges on a Domain Controller
-
 # ==============================================================================
 
-# Parameters
 param(
     [Parameter()]
     [string]$BackupPath = "C:\Backup\DNS",

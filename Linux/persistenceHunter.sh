@@ -1,18 +1,18 @@
 #!/bin/bash
-# Just because putting in a banner is SUPER common I figured  I'd send her early 
 # ==============================================================================
-# Script Name : huntwabbits.sh
-# Description : Thunt wabbits in the system, specifically persistence in linux.
+# Script Name : persistenceHunter.sh
+# Description : hunt wabbits in the system, specifically persistence in linux.
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.0
+# Version     : 1.1
 # ==============================================================================
-# Usage       : ./huntwabbits.sh
+# Usage       : ./persistenceHunter.sh
 # Notes       :
 #   - If you don't see it here red team, don't worry. I still check it - tyler
 # ==============================================================================
 # Changelog:
 #   v1.0 - Creation! All basics are in here.
+#   v1.1 - Fixed banner, Consolodated code.
 # ==============================================================================
 
 #!/bin/bash

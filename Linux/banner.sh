@@ -42,15 +42,15 @@ create_banner() {
     cat << 'EOF' > /tmp/banner_content
 ******************************************************************************
 *                                                                            *
-*                            AUTHORIZED ACCESS ONLY                           *
+*                            AUTHORIZED ACCESS ONLY                          *
 *                                                                            *
 * This system is restricted to authorized users for legitimate business      *
 * purposes only. All activities are monitored and recorded. Unauthorized     *
-* access is prohibited and violators will be prosecuted to the full extent  *
+* access is prohibited and violators will be prosecuted to the full extent   *
 * of applicable law.                                                         *
 *                                                                            *
 * By continuing to use this system, you indicate your awareness of and       *
-* consent to these terms and conditions of use.                             *
+* consent to these terms and conditions of use.                              *
 *                                                                            *
 ******************************************************************************
 EOF

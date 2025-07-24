@@ -9,7 +9,7 @@
 #   - Make sure to update the variables as needed to configure the system correctly.
 # ==============================================================================
 # Changelog:
-#   v1 - Adapted for Debian DNS/NTP server with BIND9
+#   v1.0 - Adapted for Debian DNS/NTP server with BIND9
 # ==============================================================================
 
 # Check if added as root
@@ -18,7 +18,6 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-# Definitions:
 username='root'
 newUsername='example'
 services=("bind9" "ntp")
@@ -83,7 +82,7 @@ backup() {
 }
 
 find_malicious() {
-    echo -e "${YELLOW}scanning for potentially malicious files${NC}\n\n"
+    echo -e "${YELLOW}scanning for PHP malicious files${NC}\n\n"
     # Check for PHP files outside web directories (DNS servers shouldn't have PHP)
     find / -type f -name "*.php" 2>/dev/null | while read -r file; do
         # Backup the file to /root/ with a timestamp

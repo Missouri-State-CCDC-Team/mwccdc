@@ -15,7 +15,6 @@
 #   - Optionally restores system state with -RestoreSystemState (requires reboot)
 # ==============================================================================
 
-
 function Restore-DnsZones {
     Write-Log "Restoring DNS zones" "INFO"
     

@@ -11,9 +11,6 @@
 
 .NOTES
     Author: Tyler Olson
-.LINK
-    https://github.com/tylerolson/YourScriptRepo
-
 #>
 
 # --- Run Keys ---

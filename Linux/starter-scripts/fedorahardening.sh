@@ -1,4 +1,3 @@
-
 #!/bin/bash 
 # ==============================================================================
 # Script Name : fedoraharden.sh
@@ -15,7 +14,7 @@
 #   v1.1 - SGVsbG8gZnJpZW5kLCB5b3Ugc2VlbSBsb3N0Pw==
 # ==============================================================================
 
-# Check if added as root
+# Check if script is running as root
 if [ "$(id -u)" != "0" ]; then
     echo "This script must be run as root or with sudo privileges"
     exit 1
@@ -138,8 +137,7 @@ findcron() {
 
 firewall_config() {
     echo -e "${YELLOW}--- Starting to configure firewall rules ---${NC}"
-    # Firewall Rules
-    sudo firewall-cmd --permanent --new-zone=ccdczone                                           # Creating a new zone
+    sudo firewall-cmd --permanent --new-zone=ccdczone                               # Creating a new zone
     sudo firewall-cmd --set-default-zone=ccdczone                                   
     sudo firewall-cmd --permanent --zone=ccdczone --add-port=587/tcp                # Port for SMTP
     sudo firewall-cmd --permanent --zone=ccdczone --add-port=25/tcp                 # Ports for SMTP

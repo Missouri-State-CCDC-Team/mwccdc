@@ -4,7 +4,6 @@
 # Description : This is specifically to harden the Splunk server.
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.1
 # ==============================================================================
 # Usage       : splunkharden.sh
 # Notes       : 
