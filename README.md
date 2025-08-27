@@ -23,11 +23,10 @@ The repository is organized to support different aspects of the team’s operati
 ├── Splunk/                   # Splunk dashboards and configuration resources
 ├── Windows/                  # Windows system scripts and resources
 ├── ansible/                  # Ansible playbooks for automation and configuration management
-├── Inject Template.docx      # Template for competition inject tasks
-├── NEW INCIDENT Report Form(1).xlsm   # Incident report form for recording competition incidents
+├── liason/                   # Specific items related to the liasion of the competition team
 └── README.md                 # This README file
 ```
 
 ## License
 
-This repository is provided for the internal use of the Missouri State CCDC team. If you require further information regarding licensing or usage rights, please contact the team directly.
+This repository is provided for the internal use of the Missouri State CCDC team. This means no hackorz allowed. please take them to a different team :)

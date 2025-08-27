@@ -1,5 +1,4 @@
 ---
-# Requirements file for Missouri State CCDC Team
 # use `ansible-galaxy install -r requirements.yml`
 
 # Collections

@@ -1,6 +1,10 @@
-
-
-
+# ==============================================================================
+# Script Name : fedoraServiceMonitor.sh
+# Description : Monitors the fedora services for any chnages and will wall if detected.
+# Author      : Tyler Olson
+# Organization: Missouri State University
+# Version     : 1.1 - Addition of these notes
+# ==============================================================================
 #!/bin/bash
 set -e
 
@@ -33,7 +37,7 @@ EOF
 chmod +x /usr/local/bin/serv-monitor.sh
 chown root:root /usr/local/bin/serv-monitor.sh
 
-echo "[+] Creating systemd service unit..."
+echo "Creating systemd service unit..."
 cat > /etc/systemd/system/serv-monitor.service << 'EOF'
 [Unit]
 Description=Service Monitor for dovecot and postfix
@@ -59,12 +63,12 @@ SystemCallFilter=@system-service
 WantedBy=multi-user.target
 EOF
 
-echo "[+] Reloading systemd and enabling the service..."
+echo "Reloading systemd and enabling the service..."
 systemctl daemon-reexec
 systemctl daemon-reload
 systemctl enable --now serv-monitor.service
 
-echo "[+] (Optional) Setting immutable flag on script to prevent tampering..."
+echo "[+] Setting immutable flag on script to prevent tampering..."
 chattr +i /usr/local/bin/serv-monitor.sh || echo "Could not set immutable flag. You may need to enable ext4 attributes."
 
-echo "[✓] serv-monitor has been installed and is now running."
+echo "serv-monitor has been installed and is now running."

@@ -2,7 +2,6 @@
 # Adapting some code from Samual Brucker from SEMO, Thanking him for the great contribution to MSU's Cyber team :)
 # Samuel Brucker 2024-2025 Check it out here: https://github.com/SEMO-Cyber/CyberDefenseTeamPrep/blob/main/Splunk/linuxSplunkForwarderInstall.sh
 
-
 # Define Splunk Forwarder variables
 SPLUNK_VERSION="9.1.1"
 SPLUNK_BUILD="64e843ea36b1"
