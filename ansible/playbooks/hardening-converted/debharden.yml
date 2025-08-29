@@ -13,12 +13,103 @@
       ansible.builtin.package:
         update_cache: yes
         upgrade: yes
-        name: #UNABLE TO COPY ATM
+        name: 
+          - bind9
+          - bind9utils
+          - bind9-doc
+          - ntp
+          - ntpdate
+          - tmux
+          - ufw
+          - dnsutils
+          - net-tools
+          - ufw
         state: present
     
+    # TODO: Insert task allowing for password changes based on variable
     - name: Change the password of the root user
 
-    - name: Backup
-      ansible.builtin.archive:
-        src:
-        dest:
+    - name: Ensure backup directory present 
+      ansible.builtin.file:
+        path: /root/backup
+        state: directory
+  
+    - name: Backup the base configuration
+      community.general.archive:
+        path:
+          - /root/
+          - /etc/bind 
+          - /etc/cron*
+          - /etc/passwd
+          - /etc/group
+          - /etc/shadow
+          - /etc/sudoers*
+          - /etc/hosts
+          - /etc/hostname
+          - /etc/aliases
+          - /etc/systemd
+          - /etc/apt
+          - /etc/resolv.conf
+          - /var/cache/bind
+          - /var/lib/bind
+          - /etc/default/ntp
+        dest: /root/backup/inital-backup.tgz
+        attributes: 0600
+
+    # TODO: Copy the backup file to the host and store it in a localhost directory
+
+    # TODO: Possibly add the find malicous php files in here. could be a role as an alternative.
+
+    # TODO: Add a findcron script to debug out all crontabs to the ansible host
+
+    # Firewall Configuration
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+    
+    - name: Ensure UFW Logging is enabled
+      community.general.ufw:
+        logging: on
+    
+    - name: Allow SSH Port 
+      community.general.ufw:
+        rule: allow 
+        port: "22"
+        proto: tcp
+    
+    - name: Allow DNS tcp
+      community.general.ufw:
+        rule: allow 
+        port: "53"
+        proto: tcp
+
+    - name: Allow DNS UDP 
+      community.general.ufw: 
+      rule: allow 
+      port: "53"
+      proto: udp 
+
+    - name: allow NTP 
+      community.general.ufw: 
+        rule: allow 
+        port: "123"
+        proto: udp 
+    
+    - name: Set default policy to deny incoming 
+      community.general.ufw: 
+        default: deny 
+        direction: incoming 
+    
+    - name: set default policy to deny outgoing 
+      community.general.ufw:
+        default: deny 
+        direction: outgoing
+
+    - name: Reload UFW 
+      community.general.ufw:
+        state: reloaded
+
+
+#TO-DO impllement debug checks to verify current status of the service and attept to restart services
+
+#TODO Make a general ssh config role to apply to all the host 
