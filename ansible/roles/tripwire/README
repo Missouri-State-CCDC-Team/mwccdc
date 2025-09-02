@@ -6,6 +6,21 @@ This role was Developed by Tyler Olson for use by the Missouri State University 
 
 ## Setup 
 Ensure that the ansible vault is configured: 
-```
+```sh
 ansible-vault encrypt_string 'SuperSecretPassphrase' --name 'tripwire_local_key_pass'
+```
+
+### Example Playbook: 
+initTripwire.yml
+```sh
+- name: Initalize the tripwire role
+  hosts: all
+  become: true
+  roles:
+    - tripwire
+```
+
+Run the playbook:
+```sh
+ansible-playbook ./init-Tripwire.yml --ask-vault-pass
 ```

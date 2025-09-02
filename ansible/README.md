@@ -1,11 +1,17 @@
 # Ansible
 
-Automation is essential for teams that are smaller in size. this is why this section was created. I cannot provide much details in a public repository on the ansible setup for our hosts. good luck figuring it out red team :)
+Automation is essential for teams that are smaller in size. this is why this section was created. I cannot provide much details in a public repository lol.
 
---- 
+---
+## Deploying the ansible controller
+```bash
+cd mwccdc/ansible
+chmod +x ./ansibleserver.sh
+./ansibleserver.sh
+```
 
-## Purpose: 
-- Using the ansibleserver.sh an ansible server will be established that clones playbooks and additional roles from the roles file, as well as custom playbooks. This will assist with security posture and configuration management.
-
+## Key Distrobution
+Its a mystery :O
+NOT IMPLEMENTED YET
 
 Red team if your reading this GET OUT I don't like you :( 

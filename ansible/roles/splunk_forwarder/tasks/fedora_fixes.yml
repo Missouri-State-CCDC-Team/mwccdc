@@ -1,3 +1,0 @@
-- name: Warn about potential reboot requirement
-  debug:
-    msg: "Fedora detected: A reboot may be required after installation for the forwarder to function correctly."
