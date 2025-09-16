@@ -1,10 +1,9 @@
 ---
-# Example playbook to install and configure Splunk Universal Forwarder using custom role
+# utilizes splunk's role to install the UF on a system to a specific indexer.
 - name: Install Splunk Universal Forwarder
   hosts: uf
   become: true
   vars:
-    # Override default variables as needed
     splunk_indexer: "172.20.241.20"  # Your Splunk server IP
     splunk_admin_user: "admin"
     splunk_admin_password: "YourSecurePassword123!"

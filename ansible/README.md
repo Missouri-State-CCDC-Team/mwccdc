@@ -12,6 +12,5 @@ chmod +x ./ansibleserver.sh
 
 ## Key Distrobution
 Its a mystery :O
-NOT IMPLEMENTED YET
 
 Red team if your reading this GET OUT I don't like you :( 

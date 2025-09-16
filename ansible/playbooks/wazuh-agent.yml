@@ -1,6 +1,4 @@
 ---
-# ansible/playbooks/deploy_wazuh_complete.yml
-
 - name: Deploy Wazuh server
   hosts: wazuh_servers
   become: true

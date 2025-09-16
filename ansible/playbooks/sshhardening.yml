@@ -19,4 +19,4 @@
       - "LogLevel VERBOSE"
       - "MaxStartups 10:30:60"
       - "AllowUsers CCDCIR"
-    sftp_enabled: false  # Ensure Ansible can transfer files via SCP
+    sftp_enabled: false

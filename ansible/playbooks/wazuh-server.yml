@@ -1,13 +1,10 @@
 ---
-# ansible/playbooks/deploy_wazuh.yml
-
 - name: Deploy Wazuh server
   hosts: wazuh_servers
   become: true
   gather_facts: true
   
   vars:
-    # Override default values here if needed
     wazuh_version: "4.5.2"
     wazuh_admin_user: "admin"
     wazuh_admin_password: "ChangeMe2025!" # Change this to a secure password

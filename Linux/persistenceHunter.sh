@@ -6,10 +6,6 @@
 # Organization: Missouri State University
 # Version     : 1.1
 # ==============================================================================
-# Usage       : ./persistenceHunter.sh
-# Notes       :
-#   - If you don't see it here red team, don't worry. I still check it - tyler
-# ==============================================================================
 # Changelog:
 #   v1.0 - Creation! All basics are in here.
 #   v1.1 - Fixed banner, Consolodated code.

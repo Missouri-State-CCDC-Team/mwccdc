@@ -6,23 +6,8 @@
 
   roles:
     - role: robertdebock.fail2ban
+    # https://github.com/robertdebock/ansible-role-fail2ban
   vars:
-      # defaults file for fail2ban
-      fail2ban_loglevel: INFO
-      fail2ban_logtarget: /var/log/fail2ban.log
-
-      fail2ban_ignoreself: "true"
-      fail2ban_ignoreips:
-        - "127.0.0.1/8 ::1"
-
-      # In seconds
-      fail2ban_bantime: 1200
-      fail2ban_findtime: 1200
-
-      fail2ban_maxretry: 5
-      fail2ban_destemail: root@localhost
-      fail2ban_sender: root@team15ccdc.org
-
       fail2ban_configuration: []
       #  - option: loglevel
       #    value: "INFO"
@@ -35,7 +20,4 @@
 
       # Path to directory containing filters to copy in filter.d
       # fail2ban_filterd_path:
-
-
-# # https://github.com/robertdebock/ansible-role-fail2ban
 
