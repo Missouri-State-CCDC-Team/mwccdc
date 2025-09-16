@@ -3,11 +3,10 @@
     Takes and prints the most comon persistence mechanisms used in windows distrobutions
 
 .DESCRIPTION
-    Used to print out the persistence mechanisms on windows systems, based off 
+    Used to print out the persistence mechanisms on windows systems.
 
 .EXAMPLE
-    PS> .\MyScript.ps1 -ParameterName "Value"
-    Demonstrates how to run the script with basic usage.
+    PS> .\persistence-destroyer.ps1 
 
 .NOTES
     Author: Tyler Olson
