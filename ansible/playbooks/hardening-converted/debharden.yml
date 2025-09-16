@@ -9,8 +9,13 @@
     dns_servers:
       - 8.8.8.8
       - 8.8.4.4
+    allowed_ports:
+    - { port: '22', proto: 'tcp', comment: 'SSH' }
+    - { port: '53', proto: 'tcp', comment: 'DNS' }
+    - { port: '53', proto: 'udp', comment: 'DNS' }
+    - { port: '123', proto: 'udp', comment: 'NTP' }
+ 
   tasks:
-  # Software
     - name: Update and install required software 
       ansible.builtin.package:
         update_cache: true
@@ -28,18 +33,12 @@
           - ufw
         state: present
     
-    # TODO: Insert task allowing for password changes based on variable
     - name: Change the password of the root user
-      user:
+      ansible.builtin.user:
         name: root
         password: "{{ new_root_password | password_hash('sha512') }}"
         update_password: always
 
-    - name: Ensure backup directory present 
-      ansible.builtin.file:
-        path: /root/backup
-        state: directory
-  
     - name: Backup the base configuration
       community.general.archive:
         path:
@@ -60,16 +59,17 @@
           - /var/lib/bind
           - /etc/default/ntp
         dest: /root/backup/inital-backup.tgz
+        creates: /root/backup
         attributes: 600
 
     - name: Copy backup to ansible control host
-      fetch:
+      ansible.builtin.fetch:
         src: /root/backup/inital-backup.tgz
         dest: "./backups/{{ inventory_hostname }}-{{ ansible_date_time.epoch }}-backup.tgz"
         flat: true
       
     - name: Find suspicious PHP files
-      find:
+      ansible.builtin.find:
         paths: ["/var/www", "/home", "/tmp"]
         patterns: ["*.php"]
         contains: "(eval|exec|system|shell_exec|base64_decode)"
@@ -78,25 +78,10 @@
       ignore_errors: true
     
     - name: Report suspicious PHP files
-      debug:
+      ansible.builtin.debug:
         var: suspicious_php.files
       when: suspicious_php.files | length > 0
     
-    - name: Collect all crontabs
-      shell: |
-        for user in $(cut -f1 -d: /etc/passwd); do
-          echo "=== $user crontab ===" || true
-          crontab -u $user -l 2>/dev/null || echo "No crontab for $user"
-        done > /tmp/all_crontabs.txt
-        cat /etc/crontab >> /tmp/all_crontabs.txt 2>/dev/null || true
-        find /etc/cron* -type f -exec echo "=== {} ===" \; -exec cat {} \; >> /tmp/all_crontabs.txt 2>/dev/null || true
-      register: crontab_collection
-      
-    - name: Fetch crontab information
-      fetch:
-        src: /tmp/all_crontabs.txt
-        dest: "./crontabs/{{ inventory_hostname }}-crontabs.txt"
-        flat: true
         
     - name: Create backup user for emergency access
       user:
@@ -107,7 +92,6 @@
         create_home: true
         state: present
 
-    # Firewall Configuration
     - name: Enable UFW
       community.general.ufw:
         state: enabled
@@ -116,29 +100,15 @@
       community.general.ufw:
         logging: full
     
-    - name: Allow SSH Port 
-      community.general.ufw:
-        rule: allow 
-        port: "22"
-        proto: tcp
-    
-    - name: Allow DNS tcp
-      community.general.ufw:
-        rule: allow 
-        port: "53"
-        proto: tcp
-
-    - name: Allow DNS UDP
+    - name: Configure UFW firewall rules
       community.general.ufw:
         rule: allow
-        port: "53"
-        proto: udp 
-
-    - name: Allow NTP
-      community.general.ufw:
-        rule: allow
-        port: "123"
-        proto: udp 
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+        comment: "{{ item.comment | default('') }}"
+      loop: "{{ allowed_ports }}"
+      become: true
+      when: enable_firewall | default(true) | bool
     
     - name: Set default policy to deny incoming
       community.general.ufw:
@@ -182,12 +152,3 @@
     - name: Report DNS status
       debug:
         msg: "DNS resolution: {{ 'working' if dns_test.rc == 0 else 'FAILED' }}"
-        
-    - name: Test SSH connectivity
-      wait_for:
-        port: 22
-        host: "{{ ansible_host }}"
-        timeout: 10
-      delegate_to: localhost
-      register: ssh_test
-      failed_when: false

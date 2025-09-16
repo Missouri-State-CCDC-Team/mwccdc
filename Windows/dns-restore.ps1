@@ -3,13 +3,11 @@
 # Description : Restores Active Directory DNS configuration from a backup
 #               created by ad-dns-backup.ps1. Includes DNS zones, records,
 #               forwarders, and server settings.
-# Author      : Missouri State CCDC Team
-# Organization: Missouri State University
+# Author      : Tyler Olson
 # Version     : 1.0
 # ==============================================================================
 # Usage       : .\ad-dns-restore.ps1 -BackupPath "C:\Backup\DNS\DNS_Backup_20250407_123045" [-ForceRestore] [-RestoreSystemState]
 # Notes       :
-#   - Must be run with administrative privileges on a Domain Controller
 #   - Creates a backup of the current configuration before restoring
 #   - Can force restoration with -ForceRestore parameter
 #   - Optionally restores system state with -RestoreSystemState (requires reboot)
