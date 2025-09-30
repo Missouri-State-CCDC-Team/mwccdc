@@ -23,7 +23,6 @@ The repository is organized to support different aspects of the team’s operati
 ├── Splunk/                   # Splunk dashboards and configuration resources
 ├── Windows/                  # Windows system scripts and resources
 ├── ansible/                  # Ansible playbooks for automation and configuration management
-├── liason/                   # Specific items related to the liasion of the competition team
 └── README.md                 # This README file
 ```
 
