@@ -41,6 +41,13 @@ function Write-Log {
     }
 }
 
+function New-ComplexPassword {
+    param([int]$Length = 24)
+    $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?'
+    $password = -join (1..$Length | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] })
+    return $password
+}
+
 
 Write-Log "Starting Golden Ticket mitigation process"
 
@@ -79,7 +86,7 @@ try {
     Write-Log "KRBTGT Account GUID: $krbtgtGUID"
     
     # Generate a new complex password
-    $newPassword = [System.Web.Security.Membership]::GeneratePassword(24, 8)
+    $newPassword = New-ComplexPassword -Length 24
     $securePassword = ConvertTo-SecureString -AsPlainText $newPassword -Force
     
     # Reset the KRBTGT password
@@ -97,7 +104,7 @@ try {
     Write-Log "Performing second KRBTGT password reset..."
     
     # Generate a different complex password
-    $newPassword2 = [System.Web.Security.Membership]::GeneratePassword(24, 8)
+    $newPassword2 = New-ComplexPassword -Length 24
     $securePassword2 = ConvertTo-SecureString -AsPlainText $newPassword2 -Force
     
     # Reset the KRBTGT password again
@@ -112,7 +119,6 @@ try {
 Write-Log "Golden Ticket mitigation process completed successfully"
 Write-Log "IMPORTANT: All existing Kerberos tickets are now invalidated"
 Write-Log "Users will need to log out and log back in to receive new valid tickets"
-Write-Log "Note: For complete security, all domain-joined computers should be restarted"
 
 Write-Host ""
 Write-Host "==================================================================" -ForegroundColor Cyan

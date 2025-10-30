@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Takes and prints the most comon persistence mechanisms used in windows distrobutions
+    Takes and prints the most comon persistence mechanisms found on Windows systems.
 
 .DESCRIPTION
     Used to print out the persistence mechanisms on windows systems.
@@ -42,7 +42,7 @@ $startupPaths = @(
 foreach ($path in $startupPaths) {
     if (Test-Path $path) {
         Get-ChildItem -Path $path | ForEach-Object {
-            Write-Host "$path: $($_.Name)"
+            Write-Host "${path}: $($_.Name)"
         }
     }
 }
@@ -88,4 +88,5 @@ if (Test-Path $appInitPath) {
     }
 }
 
+Write-Host "It is recomended to use Autoruns and other sysinternals tools to further investigate persistence mechanisms."
 Write-Host "`n=== End of Persistence Check ===`n"

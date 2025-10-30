@@ -6,7 +6,7 @@
 # Organization: Missouri State University
 # Version     : 1.0
 # ==============================================================================
-#   - Bad bad SMB 1
+#   - Bad bad SMB 1. Mitigates Eternal Blue and other SMBv1 attacks.
 # ==============================================================================
 
 $LogDir = "C:\Logs"

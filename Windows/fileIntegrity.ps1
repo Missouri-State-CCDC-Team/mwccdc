@@ -1,14 +1,13 @@
-# Adaptation of my previous PS1 code that I created all by myself!
+# ==============================================================================
+# Script Name : .\fileIntegrity.ps1
+# Description : Monitors files for changes and maintains a baseline hash.
+# Author      : Tyler Olson
+# Version     : 1.0
+# ==============================================================================
+# Usage       : .\fileIntegrity.ps1 
+# ==============================================================================
 
-# Tyler Olson 2024 - 2025
-
-<#
-This is the main file to be run when using this program.
-For readability reasons, the code has been seperated with
-large amounts of whitespace.
-#>
-
-# Base configuration
+# Variable configuration
 $file = "./files" 
 $Running = $true # used for persistence of the application
 $logging = $false

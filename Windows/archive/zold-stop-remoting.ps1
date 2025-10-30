@@ -8,8 +8,7 @@
 # ==============================================================================
 # Usage       : ./secure-remoting.ps1 -AllowedIP "192.168.1.10"
 # Notes       :
-#   - Disable all remote management services. See other script for temp enable
-#     for applicable ansible playbooks
+#   - Disable all remote management services.
 # ==============================================================================
 
 # Log file setup

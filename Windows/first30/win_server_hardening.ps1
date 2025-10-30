@@ -1,3 +1,14 @@
+# ==============================================================================
+# Script Name : .\win_server_hardening.ps1
+# Description : Hardens Windows Server security settings.
+# Version     : 1.0
+# ==============================================================================
+# Usage       : .\win_server_hardening.ps1
+# Nptes       : 
+#  - Designed for the 2024 MWCCDC competition environment.
+# ==============================================================================
+
+
 # Ensure the script runs with administrative privileges
 if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Error "Run this script as an administrator."

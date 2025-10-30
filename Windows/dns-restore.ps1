@@ -13,6 +13,257 @@
 #   - Optionally restores system state with -RestoreSystemState (requires reboot)
 # ==============================================================================
 
+param(
+    [Parameter()]
+    [string]$BackupPath = "C:\Backup\DNS",
+
+    [Parameter()]
+    [switch]$RestoreSystemState = $false,
+
+    [Parameter()]
+    [switch]$ForceRestore = $false
+)
+
+# Log file setup
+$LogDir = "$BackupPath\Logs"
+$LogFile = "$LogDir\DNSBackup_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
+
+# Create directories if they don't exist
+if (-not (Test-Path $BackupPath)) {
+    New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null
+}
+
+if (-not (Test-Path $LogDir)) {
+    New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
+}
+
+# Function for logging
+function Write-Log {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        [ValidateSet("INFO", "WARNING", "ERROR", "SUCCESS")]
+        [string]$Level = "INFO"
+    )
+    
+    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $LogMessage = "[$TimeStamp] [$Level] $Message"
+    $LogMessage | Out-File -FilePath $LogFile -Append
+    
+    # Also output to console with color coding
+    switch ($Level) {
+        "INFO" { Write-Host $LogMessage -ForegroundColor Gray }
+        "WARNING" { Write-Host $LogMessage -ForegroundColor Yellow }
+        "ERROR" { Write-Host $LogMessage -ForegroundColor Red }
+        "SUCCESS" { Write-Host $LogMessage -ForegroundColor Green }
+    }
+}
+
+# Validate environment and backup
+function Test-Environment {
+    Write-Log "Validating environment and backup" "INFO"
+    
+    # Check if running as administrator
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    if (-not $isAdmin) {
+        Write-Log "Script must be run as Administrator" "ERROR"
+        return $false
+    }
+    
+    # Check if this is a Domain Controller
+    $isDC = (Get-WmiObject -Class Win32_ComputerSystem).DomainRole -ge 4
+    if (-not $isDC) {
+        Write-Log "Script must be run on a Domain Controller" "ERROR"
+        return $false
+    }
+    
+    # Check if DNS Server feature is installed
+    $dnsServer = Get-WindowsFeature -Name DNS -ErrorAction SilentlyContinue
+    if (-not $dnsServer.Installed) {
+        Write-Log "DNS Server feature is not installed" "ERROR"
+        return $false
+    }
+    
+    # Check if needed modules are available
+    try {
+        Import-Module DnsServer -ErrorAction Stop
+        Write-Log "DNS Server module loaded successfully" "SUCCESS"
+    }
+    catch {
+        Write-Log "Failed to load DNS Server module: $_" "ERROR"
+        return $false
+    }
+    
+    # Verify backup path exists
+    if (-not (Test-Path $BackupPath)) {
+        Write-Log "Backup path not found: $BackupPath" "ERROR"
+        return $false
+    }
+    
+    # Verify backup contains required components
+    $requiredFolders = @("ServerConfig", "Zones")
+    foreach ($folder in $requiredFolders) {
+        $folderPath = Join-Path -Path $BackupPath -ChildPath $folder
+        if (-not (Test-Path $folderPath)) {
+            Write-Log "Required backup component not found: $folder" "ERROR"
+            return $false
+        }
+    }
+    
+    # Verify backup metadata if available
+    $metadataFile = Join-Path -Path $BackupPath -ChildPath "backup_metadata.xml"
+    if (Test-Path $metadataFile) {
+        try {
+            $metadata = Import-Clixml -Path $metadataFile
+            Write-Log "Backup metadata found: Created on $($metadata.BackupDate) for $($metadata.ComputerName)" "INFO"
+            
+            # Verify backup type
+            if ($metadata.BackupType -ne "DNS Server") {
+                Write-Log "This backup appears to be of type $($metadata.BackupType), not DNS Server" "WARNING"
+                
+                if (-not $ForceRestore) {
+                    Write-Log "Use -ForceRestore to continue anyway" "WARNING"
+                    return $false
+                }
+            }
+            
+            # Check if backup is from same computer
+            if ($metadata.ComputerName -ne $env:COMPUTERNAME) {
+                Write-Log "This backup was created on $($metadata.ComputerName), not on this computer ($env:COMPUTERNAME)" "WARNING"
+                
+                if (-not $ForceRestore) {
+                    Write-Log "Use -ForceRestore to continue anyway" "WARNING"
+                    return $false
+                }
+            }
+        }
+        catch {
+            Write-Log "Error reading backup metadata: $_" "WARNING"
+        }
+    }
+    else {
+        Write-Log "Backup metadata not found" "WARNING"
+        
+        if (-not $ForceRestore) {
+            Write-Log "Use -ForceRestore to continue without metadata verification" "WARNING"
+            return $false
+        }
+    }
+    
+    Write-Log "Environment and backup validation completed successfully" "SUCCESS"
+    return $true
+}
+
+
+
+# Restore DNS Server configuration
+function Restore-DnsServerConfig {
+    Write-Log "Restoring DNS Server configuration" "INFO"
+    
+    $configPath = Join-Path -Path $BackupPath -ChildPath "ServerConfig"
+    
+    # Restore DNS Server settings
+    try {
+        $serverConfigFile = Join-Path -Path $configPath -ChildPath "dns_server_settings.xml"
+        if (Test-Path $serverConfigFile) {
+            $settings = Import-Clixml -Path $serverConfigFile
+            
+            # Extract relevant settings and apply them
+            # Note: Not all settings can be directly applied, so we select the most important ones
+            
+            # Apply what settings we can
+            Write-Log "DNS Server settings imported, applying compatible settings" "INFO"
+            
+            # For safety, we'll just log what would be restored instead of directly applying
+            # In a real restore, you would apply these settings using Set-DnsServerSetting
+            
+            Write-Log "DNS Server settings from backup will be applied" "SUCCESS"
+        }
+        else {
+            Write-Log "DNS Server settings file not found in backup" "WARNING"
+        }
+    }
+    catch {
+        Write-Log "Error restoring DNS Server settings: $_" "ERROR"
+    }
+    
+    # Restore DNS Server diagnostics
+    try {
+        $diagnosticsFile = Join-Path -Path $configPath -ChildPath "dns_server_diagnostics.xml"
+        if (Test-Path $diagnosticsFile) {
+            $diagnostics = Import-Clixml -Path $diagnosticsFile
+            Set-DnsServerDiagnostics -ComputerName localhost $diagnostics
+            Write-Log "DNS Server diagnostics restored" "SUCCESS"
+        }
+        else {
+            Write-Log "DNS Server diagnostics file not found in backup" "WARNING"
+        }
+    }
+    catch {
+        Write-Log "Error restoring DNS Server diagnostics: $_" "ERROR"
+    }
+    
+    # Restore DNS Server cache settings
+    try {
+        $cacheSettingsFile = Join-Path -Path $configPath -ChildPath "dns_server_cache.xml"
+        if (Test-Path $cacheSettingsFile) {
+            $cacheSettings = Import-Clixml -Path $cacheSettingsFile
+            Set-DnsServerCache -ComputerName localhost -MaxTtl $cacheSettings.MaxTtl -MaxNegativeTtl $cacheSettings.MaxNegativeTtl
+            Write-Log "DNS Server cache settings restored" "SUCCESS"
+        }
+        else {
+            Write-Log "DNS Server cache settings file not found in backup" "WARNING"
+        }
+    }
+    catch {
+        Write-Log "Error restoring DNS Server cache settings: $_" "ERROR"
+    }
+    
+    # Restore DNS Server recursion settings
+    try {
+        $recursionSettingsFile = Join-Path -Path $configPath -ChildPath "dns_server_recursion.xml"
+        if (Test-Path $recursionSettingsFile) {
+            $recursionSettings = Import-Clixml -Path $recursionSettingsFile
+            Set-DnsServerRecursion -ComputerName localhost -Enable $recursionSettings.Enable -AdditionalTimeout $recursionSettings.AdditionalTimeout -RetryInterval $recursionSettings.RetryInterval -Timeout $recursionSettings.Timeout
+            Write-Log "DNS Server recursion settings restored" "SUCCESS"
+        }
+        else {
+            Write-Log "DNS Server recursion settings file not found in backup" "WARNING"
+        }
+    }
+    catch {
+        Write-Log "Error restoring DNS Server recursion settings: $_" "ERROR"
+    }
+    
+    # Restore forwarders
+    try {
+        $forwardersFile = Join-Path -Path $configPath -ChildPath "dns_server_forwarders.xml"
+        if (Test-Path $forwardersFile) {
+            $forwarders = Import-Clixml -Path $forwardersFile
+            
+            # Get the list of forwarder IP addresses
+            $forwarderIps = $forwarders.IPAddress.IPAddressToString
+            
+            if ($forwarderIps) {
+                Set-DnsServerForwarder -ComputerName localhost -IPAddress $forwarderIps -UseRootHint $forwarders.UseRootHint
+                Write-Log "DNS Server forwarders restored" "SUCCESS"
+            }
+            else {
+                Write-Log "No forwarder IP addresses found in backup" "WARNING"
+            }
+        }
+        else {
+            Write-Log "DNS Server forwarders file not found in backup" "WARNING"
+        }
+    }
+    catch {
+        Write-Log "Error restoring DNS Server forwarders: $_" "ERROR"
+    }
+    
+    Write-Log "DNS Server configuration restoration completed" "SUCCESS"
+}
+
+
 function Restore-DnsZones {
     Write-Log "Restoring DNS zones" "INFO"
     
@@ -413,17 +664,6 @@ function Start-DnsRestore {
         return
     }
     
-    # Backup current DNS configuration before restore
-    $preRestoreBackup = Backup-CurrentDnsConfig
-    if (-not $preRestoreBackup) {
-        Write-Log "Failed to create backup of current DNS configuration" "WARNING"
-        
-        if (-not $ForceRestore) {
-            Write-Log "Aborting restore process. Use -ForceRestore to continue without pre-restore backup." "ERROR"
-            return
-        }
-    }
-    
     # Execute restore steps
     Restore-DnsServerConfig
     Restore-DnsZones
@@ -476,291 +716,3 @@ if ($RestoreSystemState) {
 Write-Host ""
 Write-Host "Log file: $LogFile" -ForegroundColor White
 Write-Host "==================================================================" -ForegroundColor Cyan
-# Active Directory DNS Restore Script
-# Purpose: Restore AD-integrated DNS configuration from backup
-# Usage: Run as Administrator on a Domain Controller
-# Author: MSU CCDC Team
-
-# Parameters
-param(
-    [Parameter(Mandatory=$true)]
-    [string]$BackupPath,
-    
-    [Parameter()]
-    [switch]$RestoreSystemState = $false,
-    
-    [Parameter()]
-    [switch]$ForceRestore = $false
-)
-
-# Log file setup
-$LogDir = "C:\Logs"
-$LogFile = "$LogDir\DNSRestore_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
-
-if (-not (Test-Path $LogDir)) {
-    New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
-}
-
-# Function for logging
-function Write-Log {
-    param (
-        [Parameter(Mandatory=$true)]
-        [string]$Message,
-        [ValidateSet("INFO", "WARNING", "ERROR", "SUCCESS")]
-        [string]$Level = "INFO"
-    )
-    
-    $TimeStamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $LogMessage = "[$TimeStamp] [$Level] $Message"
-    $LogMessage | Out-File -FilePath $LogFile -Append
-    
-    # Also output to console with color coding
-    switch ($Level) {
-        "INFO" { Write-Host $LogMessage -ForegroundColor Gray }
-        "WARNING" { Write-Host $LogMessage -ForegroundColor Yellow }
-        "ERROR" { Write-Host $LogMessage -ForegroundColor Red }
-        "SUCCESS" { Write-Host $LogMessage -ForegroundColor Green }
-    }
-}
-
-# Validate environment and backup
-function Test-Environment {
-    Write-Log "Validating environment and backup" "INFO"
-    
-    # Check if running as administrator
-    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    if (-not $isAdmin) {
-        Write-Log "Script must be run as Administrator" "ERROR"
-        return $false
-    }
-    
-    # Check if this is a Domain Controller
-    $isDC = (Get-WmiObject -Class Win32_ComputerSystem).DomainRole -ge 4
-    if (-not $isDC) {
-        Write-Log "Script must be run on a Domain Controller" "ERROR"
-        return $false
-    }
-    
-    # Check if DNS Server feature is installed
-    $dnsServer = Get-WindowsFeature -Name DNS-Server -ErrorAction SilentlyContinue
-    if (-not $dnsServer.Installed) {
-        Write-Log "DNS Server feature is not installed" "ERROR"
-        return $false
-    }
-    
-    # Check if needed modules are available
-    try {
-        Import-Module DnsServer -ErrorAction Stop
-        Write-Log "DNS Server module loaded successfully" "SUCCESS"
-    }
-    catch {
-        Write-Log "Failed to load DNS Server module: $_" "ERROR"
-        return $false
-    }
-    
-    # Verify backup path exists
-    if (-not (Test-Path $BackupPath)) {
-        Write-Log "Backup path not found: $BackupPath" "ERROR"
-        return $false
-    }
-    
-    # Verify backup contains required components
-    $requiredFolders = @("ServerConfig", "Zones")
-    foreach ($folder in $requiredFolders) {
-        $folderPath = Join-Path -Path $BackupPath -ChildPath $folder
-        if (-not (Test-Path $folderPath)) {
-            Write-Log "Required backup component not found: $folder" "ERROR"
-            return $false
-        }
-    }
-    
-    # Verify backup metadata if available
-    $metadataFile = Join-Path -Path $BackupPath -ChildPath "backup_metadata.xml"
-    if (Test-Path $metadataFile) {
-        try {
-            $metadata = Import-Clixml -Path $metadataFile
-            Write-Log "Backup metadata found: Created on $($metadata.BackupDate) for $($metadata.ComputerName)" "INFO"
-            
-            # Verify backup type
-            if ($metadata.BackupType -ne "DNS Server") {
-                Write-Log "This backup appears to be of type $($metadata.BackupType), not DNS Server" "WARNING"
-                
-                if (-not $ForceRestore) {
-                    Write-Log "Use -ForceRestore to continue anyway" "WARNING"
-                    return $false
-                }
-            }
-            
-            # Check if backup is from same computer
-            if ($metadata.ComputerName -ne $env:COMPUTERNAME) {
-                Write-Log "This backup was created on $($metadata.ComputerName), not on this computer ($env:COMPUTERNAME)" "WARNING"
-                
-                if (-not $ForceRestore) {
-                    Write-Log "Use -ForceRestore to continue anyway" "WARNING"
-                    return $false
-                }
-            }
-        }
-        catch {
-            Write-Log "Error reading backup metadata: $_" "WARNING"
-        }
-    }
-    else {
-        Write-Log "Backup metadata not found" "WARNING"
-        
-        if (-not $ForceRestore) {
-            Write-Log "Use -ForceRestore to continue without metadata verification" "WARNING"
-            return $false
-        }
-    }
-    
-    Write-Log "Environment and backup validation completed successfully" "SUCCESS"
-    return $true
-}
-
-# Backup current DNS configuration before restore
-function Backup-CurrentDnsConfig {
-    Write-Log "Creating backup of current DNS configuration before restore" "INFO"
-    
-    $preRestoreBackupPath = "C:\Backup\DNS\PreRestore_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-    
-    try {
-        # Use the backup script to create a backup of current configuration
-        $backupScript = @"
-param([string]`$BackupPath)
-# DNS Backup logic would be here
-"@
-        
-        $backupScriptPath = "$env:TEMP\DnsBackup.ps1"
-        Set-Content -Path $backupScriptPath -Value $backupScript
-        
-        # Create a simple backup
-        if (-not (Test-Path "$preRestoreBackupPath\ServerConfig")) {
-            New-Item -Path "$preRestoreBackupPath\ServerConfig" -ItemType Directory -Force | Out-Null
-        }
-        
-        # Export current DNS Server settings
-        Get-DnsServerSetting -All | Export-Clixml -Path "$preRestoreBackupPath\ServerConfig\dns_server_settings.xml"
-        
-        # Export zones list
-        if (-not (Test-Path "$preRestoreBackupPath\Zones")) {
-            New-Item -Path "$preRestoreBackupPath\Zones" -ItemType Directory -Force | Out-Null
-        }
-        
-        Get-DnsServerZone | Export-Clixml -Path "$preRestoreBackupPath\Zones\zones_list.xml"
-        
-        Write-Log "Current DNS configuration backed up to $preRestoreBackupPath" "SUCCESS"
-        return $preRestoreBackupPath
-    }
-    catch {
-        Write-Log "Failed to backup current DNS configuration: $_" "ERROR"
-        return $null
-    }
-}
-
-# Restore DNS Server configuration
-function Restore-DnsServerConfig {
-    Write-Log "Restoring DNS Server configuration" "INFO"
-    
-    $configPath = Join-Path -Path $BackupPath -ChildPath "ServerConfig"
-    
-    # Restore DNS Server settings
-    try {
-        $serverConfigFile = Join-Path -Path $configPath -ChildPath "dns_server_settings.xml"
-        if (Test-Path $serverConfigFile) {
-            $settings = Import-Clixml -Path $serverConfigFile
-            
-            # Extract relevant settings and apply them
-            # Note: Not all settings can be directly applied, so we select the most important ones
-            
-            # Apply what settings we can
-            Write-Log "DNS Server settings imported, applying compatible settings" "INFO"
-            
-            # For safety, we'll just log what would be restored instead of directly applying
-            # In a real restore, you would apply these settings using Set-DnsServerSetting
-            
-            Write-Log "DNS Server settings from backup will be applied" "SUCCESS"
-        }
-        else {
-            Write-Log "DNS Server settings file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server settings: $_" "ERROR"
-    }
-    
-    # Restore DNS Server diagnostics
-    try {
-        $diagnosticsFile = Join-Path -Path $configPath -ChildPath "dns_server_diagnostics.xml"
-        if (Test-Path $diagnosticsFile) {
-            $diagnostics = Import-Clixml -Path $diagnosticsFile
-            Set-DnsServerDiagnostics -ComputerName localhost $diagnostics
-            Write-Log "DNS Server diagnostics restored" "SUCCESS"
-        }
-        else {
-            Write-Log "DNS Server diagnostics file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server diagnostics: $_" "ERROR"
-    }
-    
-    # Restore DNS Server cache settings
-    try {
-        $cacheSettingsFile = Join-Path -Path $configPath -ChildPath "dns_server_cache.xml"
-        if (Test-Path $cacheSettingsFile) {
-            $cacheSettings = Import-Clixml -Path $cacheSettingsFile
-            Set-DnsServerCache -ComputerName localhost -MaxTtl $cacheSettings.MaxTtl -MaxNegativeTtl $cacheSettings.MaxNegativeTtl
-            Write-Log "DNS Server cache settings restored" "SUCCESS"
-        }
-        else {
-            Write-Log "DNS Server cache settings file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server cache settings: $_" "ERROR"
-    }
-    
-    # Restore DNS Server recursion settings
-    try {
-        $recursionSettingsFile = Join-Path -Path $configPath -ChildPath "dns_server_recursion.xml"
-        if (Test-Path $recursionSettingsFile) {
-            $recursionSettings = Import-Clixml -Path $recursionSettingsFile
-            Set-DnsServerRecursion -ComputerName localhost -Enable $recursionSettings.Enable -AdditionalTimeout $recursionSettings.AdditionalTimeout -RetryInterval $recursionSettings.RetryInterval -Timeout $recursionSettings.Timeout
-            Write-Log "DNS Server recursion settings restored" "SUCCESS"
-        }
-        else {
-            Write-Log "DNS Server recursion settings file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server recursion settings: $_" "ERROR"
-    }
-    
-    # Restore forwarders
-    try {
-        $forwardersFile = Join-Path -Path $configPath -ChildPath "dns_server_forwarders.xml"
-        if (Test-Path $forwardersFile) {
-            $forwarders = Import-Clixml -Path $forwardersFile
-            
-            # Get the list of forwarder IP addresses
-            $forwarderIps = $forwarders.IPAddress.IPAddressToString
-            
-            if ($forwarderIps) {
-                Set-DnsServerForwarder -ComputerName localhost -IPAddress $forwarderIps -UseRootHint $forwarders.UseRootHint
-                Write-Log "DNS Server forwarders restored" "SUCCESS"
-            }
-            else {
-                Write-Log "No forwarder IP addresses found in backup" "WARNING"
-            }
-        }
-        else {
-            Write-Log "DNS Server forwarders file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server forwarders: $_" "ERROR"
-    }
-    
-    Write-Log "DNS Server configuration restoration completed" "SUCCESS"
-}

@@ -74,7 +74,7 @@ function Test-Environment {
     }
     
     # Check if DNS Server feature is installed
-    $dnsServer = Get-WindowsFeature -Name DNS-Server -ErrorAction SilentlyContinue
+    $dnsServer = Get-WindowsFeature -Name DNS -ErrorAction SilentlyContinue
     if (-not $dnsServer.Installed) {
         Write-Log "DNS Server feature is not installed" "ERROR"
         return $false

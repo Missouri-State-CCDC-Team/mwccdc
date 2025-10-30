@@ -15,8 +15,8 @@ if (-not (Test-Path $LogDir)) {
 }
 
 # Script paths
-$GoldenTicketScript = 1goldenticketno.ps1
-$DisableRemotingScript = 1stopRemoting.ps1
+$GoldenTicketScript = .\1goldenticketno.ps1
+$DisableRemotingScript = .\1stopRemoting.ps1
 
 function Write-Log {
     param (
@@ -89,21 +89,21 @@ function Invoke-Script {
 Write-Log "Starting to run the hardening scripts" "INFO"
 
 # 1. RESET THOSE CREDS BABY
-$success = Invoke-SecurityScript -ScriptPath $GoldenTicketScript -Description "Golden Ticket Attack Mitigation"
+$success = Invoke-Script -ScriptPath $GoldenTicketScript -Description "Golden Ticket Attack Mitigation"
 if (-not $success) {
     Write-Log "Golden Ticket mitigation failed or had warnings" "WARNING"
 }
 
 # 2. Disable all remote management
-$success = Invoke-SecurityScript -ScriptPath $DisableRemotingScript -Description "Disabling Remote Management"
+$success = Invoke-Script -ScriptPath $DisableRemotingScript -Description "Disabling Remote Management"
 if (-not $success) {
     Write-Log "Remote management disabling failed or had warnings" "WARNING"
 }
 
-# 2. Disable alll legacy protocols
-$success = Invoke-SecurityScript -ScriptPath $DisableRemotingScript -Description "Disabling Remote Management"
+# 2. Disable all legacy protocols
+$success = Invoke-Script -ScriptPath $smbv1script -Description "Disabling SMBv1"
 if (-not $success) {
-    Write-Log "Remote management disabling failed or had warnings" "WARNING"
+    Write-Log "SMBv1 disabling failed or had warnings" "WARNING"
 }
 
 Write-Host ""
