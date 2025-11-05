@@ -39,7 +39,7 @@ function Write-Log {
 }
 
 # Install the sysinternals suite to C:\Tools\Sysinternals
-wget $sysinternals_downloadUrl -OutFile "$env:TEMP\SysinternalsSuite.zip"
+Invoke-WebRequest -Uri $sysinternals_downloadUrl -OutFile "$env:TEMP\SysinternalsSuite.zip"
 Expand-Archive -Path "$env:TEMP\SysinternalsSuite.zip" -DestinationPath "C:\Tools\Sysinternals" -Force
 Write-Log "Sysinternals Suite downloaded and extracted to C:\Tools\Sysinternals" "SUCCESS"
 
