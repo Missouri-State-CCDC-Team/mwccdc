@@ -7,7 +7,7 @@
 # Usage       : .\tools.ps1 
 # ==============================================================================
 
-$sysinternals_downloadUrl = https://download.sysinternals.com/files/SysinternalsSuite.zip
+$sysinternals_downloadUrl = "https://download.sysinternals.com/files/SysinternalsSuite.zip"
 $sysinternalsPath = "C:\Tools\Sysinternals"
 
 # Log file setup
