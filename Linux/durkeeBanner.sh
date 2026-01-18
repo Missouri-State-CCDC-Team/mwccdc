@@ -4,7 +4,7 @@
 # Description : Durkee Banner
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.1 - more durkee
+# Version     : 1.2 -- durke 2.0
 # ==============================================================================
 # Credit to SpecialNebulae for this gem of a message
 
