@@ -14,20 +14,16 @@
 
 param(
     [Parameter()]
-    [string]$SysmonPath = "C:\tools\",
+    [string]$SysmonPath = "C:\Tools\Sysinternals",
     
+    [Parameter()]
+    [string]$LogDir = "C:\Logs\Sysmon",
+
     [Parameter()]
     [string]$ConfigUrl = "https://raw.githubusercontent.com/NextronSystems/sysmon-config/refs/heads/master/sysmonconfig-export-block.xml"
 )
 
-# Log file setup
-$LogDir = "$BackupPath\Logs"
-$LogFile = "$LogDir\DNSBackup_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
-
-# Create directories if they don't exist
-if (-not (Test-Path $BackupPath)) {
-    New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null
-}
+$LogFile = "$LogDir\SYSMON_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
 
 if (-not (Test-Path $LogDir)) {
     New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
@@ -128,7 +124,7 @@ function Install-Sysmon {
     $sysmonExe = Join-Path $SysmonPath "sysmon.exe"
     
     # Check if Sysmon is already installed
-    $sysmonService = Get-Service -Name "Sysmon64" -ErrorAction SilentlyContinue
+    $sysmonService = Get-Service -Name "Sysmon" -ErrorAction SilentlyContinue
     
     if ($sysmonService) {
         Write-Log "Sysmon is already installed. Updating configuration..." "INFO"
@@ -148,7 +144,7 @@ function Install-Sysmon {
             Write-Log "Sysmon configured successfully" "SUCCESS"
             
             # Verify service is running
-            $sysmonService = Get-Service -Name "Sysmon64" -ErrorAction SilentlyContinue
+            $sysmonService = Get-Service -Name "Sysmon" -ErrorAction SilentlyContinue
             if ($sysmonService -and $sysmonService.Status -eq "Running") {
                 Write-Log "Sysmon service is running" "SUCCESS"
                 return $true
