@@ -20,6 +20,9 @@ param(
     [string]$LogDir = "C:\Logs\Sysmon",
 
     [Parameter()]
+    [string]$configPath = ".\sysmonconfig-export-block.xml"
+
+    [Parameter()]
     [string]$ConfigUrl = "https://raw.githubusercontent.com/NextronSystems/sysmon-config/refs/heads/master/sysmonconfig-export-block.xml"
 )
 
@@ -71,20 +74,6 @@ function Test-Environment {
     
     Write-Log "Sysmon found at $sysmonExe" "SUCCESS"
     
-    # Test internet connectivity
-    try {
-        $testConnection = Test-Connection -ComputerName "raw.githubusercontent.com" -Count 1 -Quiet
-        if (-not $testConnection) {
-            Write-Log "Cannot reach GitHub to download configuration" "ERROR"
-            return $false
-        }
-        Write-Log "Internet connectivity verified" "SUCCESS"
-    }
-    catch {
-        Write-Log "Failed to test internet connectivity: $_" "ERROR"
-        return $false
-    }
-    
     Write-Log "Environment validation completed successfully" "SUCCESS"
     return $true
 }
@@ -93,23 +82,26 @@ function Test-Environment {
 function Get-SysmonConfig {
     Write-Log "Downloading Sysmon configuration from $ConfigUrl" "INFO"
     
-    $configPath = "$LogPath\sysmonconfig-export-block.xml"
-    
-    try {
-        Invoke-WebRequest -Uri $ConfigUrl -OutFile $configPath -ErrorAction Stop
-        
-        if (Test-Path $configPath) {
-            Write-Log "Configuration downloaded successfully to $configPath" "SUCCESS"
-            return $configPath
+    if (-not (Test-Path $configPath) {
+        try {
+            Invoke-WebRequest -Uri $ConfigUrl -OutFile $configPath -ErrorAction Stop
+            
+            if (Test-Path $configPath) {
+                Write-Log "Configuration downloaded successfully to $configPath" "SUCCESS"
+                return $configPath
+            }
+            else {
+                Write-Log "Configuration file was not created" "ERROR"
+                return $null
+            }
         }
-        else {
-            Write-Log "Configuration file was not created" "ERROR"
+        catch {
+            Write-Log "Failed to download Sysmon configuration: $_" "ERROR"
             return $null
         }
     }
-    catch {
-        Write-Log "Failed to download Sysmon configuration: $_" "ERROR"
-        return $null
+    else {
+        Write-Log "Configuration file already downloaded to $configPath, proceeding" "SUCCESS"
     }
 }
 
@@ -217,7 +209,7 @@ if ($result) {
     Write-Host "SUCCESS" -ForegroundColor Green
     Write-Host ""
     Write-Host "Sysmon is now running with the Nextron configuration" -ForegroundColor White
-    Write-Host "Configuration: sysmonconfig-export-block.xml" -ForegroundColor White
+    Write-Host "Configuration: $configPath" -ForegroundColor White
 }
 else {
     Write-Host "Status: " -ForegroundColor White -NoNewline
