@@ -5,6 +5,7 @@
 # Author      : Tyler Olson
 # Organization: Missouri State University
 # Version     : 1.1
+# Note: Script to script other scripts.
 # ==============================================================================
 
 # Logging for this script
@@ -17,6 +18,7 @@ if (-not (Test-Path $LogDir)) {
 # Script paths
 $GoldenTicketScript = .\1goldenticketno.ps1
 $DisableRemotingScript = .\1stopRemoting.ps1
+$smbv1script = .\disableLegacyProtocols.ps1
 
 function Write-Log {
     param (

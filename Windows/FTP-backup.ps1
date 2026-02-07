@@ -556,49 +556,6 @@ function Backup-FTPContent {
     }
 }
 
-# Backup FTP log files (optional)
-function Backup-FTPLogs {
-    param (
-        [string]$BackupFolder
-    )
-
-    Write-Log "Backing up FTP log files" "INFO"
-
-    $logsBackupPath = "$BackupFolder\LogFiles"
-    if (-not (Test-Path $logsBackupPath)) {
-        New-Item -Path $logsBackupPath -ItemType Directory -Force | Out-Null
-    }
-
-    try {
-        # Default FTP log location (same as IIS)
-        $ftpLogsPath = "$env:SystemDrive\inetpub\logs\LogFiles"
-
-        if (Test-Path $ftpLogsPath) {
-            # Only copy FTPSVC logs
-            $ftpSvcLogs = Get-ChildItem -Path $ftpLogsPath -Filter "FTPSVC*" -Recurse -ErrorAction SilentlyContinue
-
-            if ($ftpSvcLogs) {
-                foreach ($logFolder in $ftpSvcLogs) {
-                    $destPath = "$logsBackupPath\$($logFolder.Name)"
-                    Copy-Item -Path $logFolder.FullName -Destination $destPath -Recurse -Force
-                    Write-Log "FTP log folder '$($logFolder.Name)' backed up" "SUCCESS"
-                }
-            }
-            else {
-                Write-Log "No FTPSVC log files found" "INFO"
-            }
-        }
-        else {
-            Write-Log "FTP log files directory not found at $ftpLogsPath" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error during FTP log files backup: $_" "ERROR"
-    }
-
-    Write-Log "FTP log files backup completed" "SUCCESS"
-}
-
 # Create final backup package
 function Create-BackupPackage {
     param (
@@ -682,9 +639,6 @@ function Start-FTPBackup {
     Backup-FTPRegistry -BackupFolder $backupFolder
     Backup-FTPContent -BackupFolder $backupFolder
 
-    # Log files backup is optional (can be large)
-    # Uncomment the following line if you want to include it
-    # Backup-FTPLogs -BackupFolder $backupFolder
 
     # Create final package
     Create-BackupPackage -BackupFolder $backupFolder -CreateCompressedArchive $Compress
@@ -716,7 +670,6 @@ Write-Host "- FTP server configuration" -ForegroundColor White
 Write-Host "- All FTP sites and bindings" -ForegroundColor White
 Write-Host "- FTP content directories (files served by FTP)" -ForegroundColor White
 Write-Host "- Authorization rules and authentication settings" -ForegroundColor White
-Write-Host "- SSL certificate bindings and information" -ForegroundColor White
 Write-Host "- Firewall settings and passive port configuration" -ForegroundColor White
 Write-Host "- User isolation settings" -ForegroundColor White
 Write-Host "- FTP messages and logging configuration" -ForegroundColor White

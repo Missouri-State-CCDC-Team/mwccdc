@@ -1,12 +1,12 @@
 # ==============================================================================
-# Script Name : stopRemoting.ps1
-# Description : exposed remote access to the internet? not ideal, Mr. Robot 
+# Script Name : 1stopRemotingServices.ps1
+# Description : exposed remote access to the internet? Mr. Robot 
 #               could comprimise us if we did that.
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.0
+# Version     : 2.0 - This definitely didn't just nuke AD on its last version. no... that would be stupid!
 # ==============================================================================
-# Usage       : ./secure-remoting.ps1 -AllowedIP "192.168.1.10"
+# Usage       : ./1stopRemotingServices.ps1
 # Notes       :
 #   - Disable all remote management services.
 # ==============================================================================
@@ -95,17 +95,8 @@ $servicesToDisable = @(
     "WinRM",
     "RemoteAccess",
     
-    # File Sharing/SMB
-    "LanmanServer",
-    "LanmanWorkstation",
-    "Browser",
-    
-    # Other remote services
-    "SharedAccess",
-    "iphlpsvc",
-    "SSDPSRV",
-    "upnphost",
-    
+    # Somebody once told me, the world was gonna roll me.
+
     # SSH (Windows 10/Server 2019+)
     "sshd",
     "ssh-agent"
@@ -130,12 +121,6 @@ foreach ($service in $servicesToDisable) {
 try { 
     Write-Log "Disabling PowerShell Remoting" "INFO"
     Disable-PSRemoting -Force -ErrorAction SilentlyContinue
-    # Remove WinRM listeners
-    Remove-Item -Path WSMan:\localhost\Listener\* -Recurse -Force -ErrorAction SilentlyContinue
-    
-    # Clear trusted hosts
-    Clear-Item WSMan:\localhost\Client\TrustedHosts -Force -ErrorAction SilentlyContinue
-    
     Write-Log "PowerShell Remoting disabled successfully" "SUCCESS"
 }
 catch { 

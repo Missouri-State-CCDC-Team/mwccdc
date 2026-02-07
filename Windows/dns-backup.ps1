@@ -10,6 +10,7 @@
 # Usage       : .\ad-dns-backup.ps1 [backup path] [compress?]
 # Notes       :
 #   - Must be run with administrative privileges on a Domain Controller
+#   - this backs up a shit load, I love backing up.
 # ==============================================================================
 
 param(
@@ -99,9 +100,9 @@ function Backup-DnsServerConfig {
     param (
         [string]$BackupFolder
     )
-    
+
     Write-Log "Backing up DNS Server configuration" "INFO"
-    
+
     $configBackupPath = "$BackupFolder\ServerConfig"
     if (-not (Test-Path $configBackupPath)) {
         New-Item -Path $configBackupPath -ItemType Directory -Force | Out-Null
@@ -188,6 +189,7 @@ function Backup-DnsZones {
     
     Write-Log "Backing up DNS zones" "INFO"
     
+    # Directory verification
     $zonesBackupPath = "$BackupFolder\Zones"
     if (-not (Test-Path $zonesBackupPath)) {
         New-Item -Path $zonesBackupPath -ItemType Directory -Force | Out-Null
@@ -222,8 +224,9 @@ function Backup-DnsZones {
             $zoneFile = "$zoneBackupPath\$zoneName.dns"
             
             if ($zone.ZoneType -ne "Stub") {
-                Export-DnsServerZone -Name $zoneName -FileName $zoneFile
-                Write-Log "Zone '$zoneName' exported to $zoneFile" "SUCCESS"
+                $relativeZoneFile = "$zoneName.backup.dns"
+                Export-DnsServerZone -Name $zoneName -FileName $relativeZoneFile
+                Write-Log "Zone '$zoneName' exported to $relativeZoneFile" "SUCCESS"
             }
             else {
                 Write-Log "Skipping export of stub zone '$zoneName'" "INFO"
@@ -242,7 +245,7 @@ function Backup-DnsZones {
         }
     }
     catch {
-        Write-Log "Error during zone export: $_" "ERROR"
+        Write-Log "Error during zone export (AD integrated zones hate this, manually export and import): $_" "ERROR" 
     }
     
     Write-Log "DNS zones backup completed" "SUCCESS"
@@ -322,53 +325,6 @@ function Backup-DnsClientSettings {
     }
     
     Write-Log "DNS client settings backup completed" "SUCCESS"
-}
-
-# Create system state backup (includes DNS)
-function Backup-SystemState {
-    param (
-        [string]$BackupFolder
-    )
-    
-    Write-Log "Creating system state backup" "INFO"
-    
-    $systemStateBackupPath = "$BackupFolder\SystemState"
-    if (-not (Test-Path $systemStateBackupPath)) {
-        New-Item -Path $systemStateBackupPath -ItemType Directory -Force | Out-Null
-    }
-    
-    try {
-        # Check if Windows Server Backup feature is installed
-        $wsbFeature = Get-WindowsFeature -Name Windows-Server-Backup -ErrorAction SilentlyContinue
-        
-        if (-not $wsbFeature.Installed) {
-            Write-Log "Windows Server Backup feature is not installed. Installing..." "WARNING"
-            Install-WindowsFeature -Name Windows-Server-Backup -IncludeAllSubFeature
-        }
-        
-        # Create system state backup using wbadmin
-        $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
-        $backupTarget = "$systemStateBackupPath\SystemState_$timestamp"
-        
-        if (-not (Test-Path $backupTarget)) {
-            New-Item -Path $backupTarget -ItemType Directory -Force | Out-Null
-        }
-        
-        $wbadminOutput = wbadmin start systemstatebackup -backupTarget:$backupTarget -quiet
-        
-        if ($LASTEXITCODE -eq 0) {
-            Write-Log "System state backup created successfully at $backupTarget" "SUCCESS"
-        }
-        else {
-            Write-Log "System state backup failed. Exit code: $LASTEXITCODE" "ERROR"
-            Write-Log "wbadmin output: $wbadminOutput" "ERROR"
-        }
-    }
-    catch {
-        Write-Log "Error during system state backup: $_" "ERROR"
-    }
-    
-    Write-Log "System state backup process completed" "SUCCESS"
 }
 
 # Copy registry DNS keys
@@ -533,10 +489,6 @@ function Start-DnsBackup {
     Backup-DnsClientSettings -BackupFolder $backupFolder
     Backup-DnsRegistry -BackupFolder $backupFolder
     Backup-DnsFiles -BackupFolder $backupFolder
-    
-    # System state backup is optional and can take a long time
-    # Uncomment the following line if you want to include it
-    # Backup-SystemState -BackupFolder $backupFolder
     
     # Create final package
     Create-BackupPackage -BackupFolder $backupFolder -CreateCompressedArchive $Compress

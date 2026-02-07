@@ -6,19 +6,15 @@
 # Author      : Tyler Olson
 # Version     : 1.0
 # ==============================================================================
-# Usage       : .\ad-dns-restore.ps1 -BackupPath "C:\Backup\DNS\DNS_Backup_20250407_123045" [-ForceRestore] [-RestoreSystemState]
+# Usage       : .\ad-dns-restore.ps1 -BackupPath "C:\Backup\DNS\DNS_Backup_20250407_123045" [-ForceRestore]
 # Notes       :
 #   - Creates a backup of the current configuration before restoring
 #   - Can force restoration with -ForceRestore parameter
-#   - Optionally restores system state with -RestoreSystemState (requires reboot)
 # ==============================================================================
 
 param(
     [Parameter()]
     [string]$BackupPath = "C:\Backup\DNS",
-
-    [Parameter()]
-    [switch]$RestoreSystemState = $false,
 
     [Parameter()]
     [switch]$ForceRestore = $false
@@ -27,11 +23,6 @@ param(
 # Log file setup
 $LogDir = "$BackupPath\Logs"
 $LogFile = "$LogDir\DNSBackup_$(Get-Date -Format 'yyyyMMdd_HHmmss').log"
-
-# Create directories if they don't exist
-if (-not (Test-Path $BackupPath)) {
-    New-Item -Path $BackupPath -ItemType Directory -Force | Out-Null
-}
 
 if (-not (Test-Path $LogDir)) {
     New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
@@ -100,16 +91,6 @@ function Test-Environment {
         return $false
     }
     
-    # Verify backup contains required components
-    $requiredFolders = @("ServerConfig", "Zones")
-    foreach ($folder in $requiredFolders) {
-        $folderPath = Join-Path -Path $BackupPath -ChildPath $folder
-        if (-not (Test-Path $folderPath)) {
-            Write-Log "Required backup component not found: $folder" "ERROR"
-            return $false
-        }
-    }
-    
     # Verify backup metadata if available
     $metadataFile = Join-Path -Path $BackupPath -ChildPath "backup_metadata.xml"
     if (Test-Path $metadataFile) {
@@ -154,54 +135,10 @@ function Test-Environment {
     return $true
 }
 
-
-
 # Restore DNS Server configuration
 function Restore-DnsServerConfig {
     Write-Log "Restoring DNS Server configuration" "INFO"
-    
     $configPath = Join-Path -Path $BackupPath -ChildPath "ServerConfig"
-    
-    # Restore DNS Server settings
-    try {
-        $serverConfigFile = Join-Path -Path $configPath -ChildPath "dns_server_settings.xml"
-        if (Test-Path $serverConfigFile) {
-            $settings = Import-Clixml -Path $serverConfigFile
-            
-            # Extract relevant settings and apply them
-            # Note: Not all settings can be directly applied, so we select the most important ones
-            
-            # Apply what settings we can
-            Write-Log "DNS Server settings imported, applying compatible settings" "INFO"
-            
-            # For safety, we'll just log what would be restored instead of directly applying
-            # In a real restore, you would apply these settings using Set-DnsServerSetting
-            
-            Write-Log "DNS Server settings from backup will be applied" "SUCCESS"
-        }
-        else {
-            Write-Log "DNS Server settings file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server settings: $_" "ERROR"
-    }
-    
-    # Restore DNS Server diagnostics
-    try {
-        $diagnosticsFile = Join-Path -Path $configPath -ChildPath "dns_server_diagnostics.xml"
-        if (Test-Path $diagnosticsFile) {
-            $diagnostics = Import-Clixml -Path $diagnosticsFile
-            Set-DnsServerDiagnostics -ComputerName localhost $diagnostics
-            Write-Log "DNS Server diagnostics restored" "SUCCESS"
-        }
-        else {
-            Write-Log "DNS Server diagnostics file not found in backup" "WARNING"
-        }
-    }
-    catch {
-        Write-Log "Error restoring DNS Server diagnostics: $_" "ERROR"
-    }
     
     # Restore DNS Server cache settings
     try {
@@ -609,46 +546,6 @@ function Restore-DnsFiles {
     Write-Log "DNS files restoration completed" "SUCCESS"
 }
 
-# Restore system state (optional)
-function Restore-SystemState {
-    Write-Log "Restoring system state (includes DNS)" "INFO"
-    
-    $systemStatePath = Join-Path -Path $BackupPath -ChildPath "SystemState"
-    
-    if (Test-Path $systemStatePath) {
-        try {
-            # Find the most recent system state backup
-            $backupFolders = Get-ChildItem -Path $systemStatePath -Directory | Sort-Object LastWriteTime -Descending
-            
-            if ($backupFolders.Count -gt 0) {
-                $latestBackup = $backupFolders[0].FullName
-                
-                # Restore system state using wbadmin
-                $wbadminOutput = wbadmin start systemstaterecovery -backupTarget:$latestBackup -quiet
-                
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Log "System state restored successfully from $latestBackup" "SUCCESS"
-                    Write-Log "NOTE: A system restart may be required to complete the restore" "WARNING"
-                }
-                else {
-                    Write-Log "System state restore failed. Exit code: $LASTEXITCODE" "ERROR"
-                    Write-Log "wbadmin output: $wbadminOutput" "ERROR"
-                }
-            }
-            else {
-                Write-Log "No system state backups found in $systemStatePath" "ERROR"
-            }
-        }
-        catch {
-            Write-Log "Error during system state restore: $_" "ERROR"
-        }
-    }
-    else {
-        Write-Log "System state backup folder not found" "INFO"
-    }
-    
-    Write-Log "System state restore process completed" "SUCCESS"
-}
 
 # Main execution
 function Start-DnsRestore {
@@ -672,10 +569,6 @@ function Start-DnsRestore {
     Restore-DnsRegistry
     Restore-DnsFiles
     
-    # System state restore is optional and requires reboot
-    if ($RestoreSystemState) {
-        Restore-SystemState
-    }
     
     # Calculate execution time
     $endTime = Get-Date
@@ -706,13 +599,6 @@ Write-Host "- Conditional forwarders" -ForegroundColor White
 Write-Host "- DNS client settings and policies" -ForegroundColor White
 Write-Host "- DNS registry keys" -ForegroundColor White
 Write-Host "- DNS server files" -ForegroundColor White
-
-if ($RestoreSystemState) {
-    Write-Host "- System state (requires reboot to complete)" -ForegroundColor Yellow
-    Write-Host ""
-    Write-Host "IMPORTANT: A system restart is required to complete the restore!" -ForegroundColor Red
-}
-
 Write-Host ""
 Write-Host "Log file: $LogFile" -ForegroundColor White
 Write-Host "==================================================================" -ForegroundColor Cyan

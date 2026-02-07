@@ -70,7 +70,7 @@ try {
 
 # 2. First KRBTGT password reset
 try {
-    Write-Log "Performing first KRBTGT password reset..."
+    Write-Log "Performing first KRBTGT password reset..." "INFO"
     
     # Get domain information
     $domain = Get-ADDomain
@@ -92,11 +92,14 @@ try {
     # Reset the KRBTGT password
     Set-ADAccountPassword -Identity $krbtgtAccount -Reset -NewPassword $securePassword
     
-    Write-Log "First KRBTGT password reset completed successfully"
+    Write-Log "First KRBTGT password reset completed successfully" "SUCCESS"
 } catch {
     Write-Log "Failed during first KRBTGT password reset: $_" "ERROR"
     exit 1
 }
+
+Write-Log "Waiting 20 seconds before another reset. letting things settle" "INFO"
+start-sleep -Seconds 20
 
 
 # 3. Second KRBTGT password reset
@@ -110,14 +113,14 @@ try {
     # Reset the KRBTGT password again
     Set-ADAccountPassword -Identity $krbtgtAccount -Reset -NewPassword $securePassword2
     
-    Write-Log "Second KRBTGT password reset completed successfully"
+    Write-Log "Second KRBTGT password reset completed successfully" "SUCCESS"
 } catch {
     Write-Log "Failed during second KRBTGT password reset: $_" "ERROR"
     exit 1
 }
 
 Write-Log "Golden Ticket mitigation process completed successfully"
-Write-Log "IMPORTANT: All existing Kerberos tickets are now invalidated"
+Write-Log "All existing Kerberos tickets are now invalidated"
 Write-Log "Users will need to log out and log back in to receive new valid tickets"
 
 Write-Host ""

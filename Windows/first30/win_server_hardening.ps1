@@ -159,9 +159,6 @@ function Invoke-NetworkHardening {
     }
 }
 
-
-
-
 #Function Disable-UnnecessaryAccounts {
 #    Write-Host "Disabling unnecessary user accounts..."
 #    Get-LocalUser | Where-Object { $_.Enabled -eq $true -and $_.Name -notmatch "Administrator|DefaultAccount|Guest" } | ForEach-Object {
@@ -216,7 +213,7 @@ Function Install-WLANService {
 Write-Host "Starting server configuration script..."
 
 
-#Disable-SMBv1
+Disable-SMBv1
 
 Invoke-NetworkHardening
 

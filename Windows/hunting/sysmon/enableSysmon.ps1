@@ -20,7 +20,7 @@ param(
     [string]$LogDir = "C:\Logs\Sysmon",
 
     [Parameter()]
-    [string]$configPath = ".\sysmonconfig-export-block.xml"
+    [string]$configPath = ".\sysmonconfig-export-block.xml",
 
     [Parameter()]
     [string]$ConfigUrl = "https://raw.githubusercontent.com/NextronSystems/sysmon-config/refs/heads/master/sysmonconfig-export-block.xml"
@@ -32,7 +32,6 @@ if (-not (Test-Path $LogDir)) {
     New-Item -Path $LogDir -ItemType Directory -Force | Out-Null
 }
 
-# Function for logging
 function Write-Log {
     param (
         [Parameter(Mandatory=$true)]
@@ -82,7 +81,7 @@ function Test-Environment {
 function Get-SysmonConfig {
     Write-Log "Downloading Sysmon configuration from $ConfigUrl" "INFO"
     
-    if (-not (Test-Path $configPath) {
+    if (-not (Test-Path $configPath)) {
         try {
             Invoke-WebRequest -Uri $ConfigUrl -OutFile $configPath -ErrorAction Stop
             
@@ -102,6 +101,7 @@ function Get-SysmonConfig {
     }
     else {
         Write-Log "Configuration file already downloaded to $configPath, proceeding" "SUCCESS"
+        return $configPath
     }
 }
 

@@ -4,7 +4,7 @@
 #               FTP-backup.ps1
 # Author      : Tyler Olson
 # Organization: Missouri State University
-# Version     : 1.0 - Initial Release
+# Version     : 1.1 - Removing redundant functions
 # ==============================================================================
 # Usage       : .\FTP-restore.ps1 -BackupPath <path to backup folder>
 # Notes       :
