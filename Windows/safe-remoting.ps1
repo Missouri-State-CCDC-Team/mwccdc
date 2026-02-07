@@ -4,9 +4,9 @@
 #               - Backs up firewall + service states
 #               - Restricts RDP/WinRM/SSH inbound to allowed management IPs/subnets
 #               - Optionally disables high-risk services (OFF by default)
-# Author      : CCDC Safe Variant
-# Version     : 1.0
-# Usage       : .\SafeRemotingLockdown.ps1 -AllowedSources @("10.0.0.0/8","192.168.1.50") -DisableServices:$false
+# Author      : CCDC Safe Variant (final)
+# Version     : 1.1
+# Usage       : .\safe-remoting.ps1 -AllowedSources @("10.0.0.0/8","192.168.1.50") -DisableServices:$false
 # Notes       : Run as Administrator
 # ==============================================================================
 
@@ -50,7 +50,7 @@ if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
     exit 1
 }
 
-# Detect if current session is RDP (so we can warn user)
+# Detect if current session is RDP (warn only)
 $sessionName = $env:SESSIONNAME
 if ($sessionName -like "RDP-Tcp*") {
     Write-Log "Detected current session is RDP ($sessionName). This script will NOT disable RDP service; firewall rules will be tightened." "WARNING"
@@ -74,7 +74,21 @@ try {
     Write-Log "Service states backed up to $svcBackup" "SUCCESS"
 }
 catch {
-    Write-Log "Backup step failed (continuing): $_" "WARNING"
+    Write-Log "Backup step failed (continuing): $($_.Exception.Message)" "WARNING"
+}
+
+# ---------------------------
+# Capability check: NetSecurity cmdlets
+# ---------------------------
+$HasNetSecurity = $false
+try {
+    if (Get-Command -Name New-NetFirewallRule -ErrorAction Stop) { $HasNetSecurity = $true }
+} catch { $HasNetSecurity = $false }
+
+if ($HasNetSecurity) {
+    Write-Log "NetSecurity cmdlets detected (New-NetFirewallRule). Using PowerShell firewall rules." "INFO"
+} else {
+    Write-Log "NetSecurity cmdlets NOT found. Falling back to netsh advfirewall rules." "WARNING"
 }
 
 # ---------------------------
@@ -88,60 +102,82 @@ function Set-RestrictiveRule {
         [Parameter(Mandatory=$true)][int]$LocalPort
     )
 
+    $remote = ($AllowedSources -join ",")
+    $allowName = $RuleName
+    $blockName = "$RuleName (Block Others)"
+
     try {
-        # Remove existing rule with same name (idempotent)
-        Get-NetFirewallRule -DisplayName $RuleName -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+        if ($script:HasNetSecurity) {
+            # Remove existing rules (idempotent)
+            Get-NetFirewallRule -DisplayName $allowName -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+            Get-NetFirewallRule -DisplayName $blockName -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
 
-        New-NetFirewallRule `
-            -DisplayName $RuleName `
-            -Group $DisplayGroup `
-            -Direction Inbound `
-            -Action Allow `
-            -Enabled True `
-            -Profile Any `
-            -Protocol $Protocol `
-            -LocalPort $LocalPort `
-            -RemoteAddress $AllowedSources | Out-Null
+            # Allow from AllowedSources
+            New-NetFirewallRule `
+                -DisplayName $allowName `
+                -Group $DisplayGroup `
+                -Direction Inbound `
+                -Action Allow `
+                -Enabled True `
+                -Profile Any `
+                -Protocol $Protocol `
+                -LocalPort $LocalPort `
+                -RemoteAddress $AllowedSources | Out-Null
 
-        Write-Log "ALLOW rule set: $RuleName | Port $LocalPort/$Protocol | RemoteAddress: $($AllowedSources -join ',')" "SUCCESS"
+            Write-Log "ALLOW rule set: $allowName | Port $LocalPort/$Protocol | RemoteAddress: $($AllowedSources -join ',')" "SUCCESS"
 
-        # Add a block rule for everyone else (only if not already blocked by default)
-        $blockName = "$RuleName (Block Others)"
-        Get-NetFirewallRule -DisplayName $blockName -ErrorAction SilentlyContinue | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+            # Block everyone else
+            New-NetFirewallRule `
+                -DisplayName $blockName `
+                -Group $DisplayGroup `
+                -Direction Inbound `
+                -Action Block `
+                -Enabled True `
+                -Profile Any `
+                -Protocol $Protocol `
+                -LocalPort $LocalPort `
+                -RemoteAddress Any | Out-Null
 
-        New-NetFirewallRule `
-            -DisplayName $blockName `
-            -Group $DisplayGroup `
-            -Direction Inbound `
-            -Action Block `
-            -Enabled True `
-            -Profile Any `
-            -Protocol $Protocol `
-            -LocalPort $LocalPort `
-            -RemoteAddress Any | Out-Null
+            Write-Log "BLOCK rule set: $blockName | Port $LocalPort/$Protocol | RemoteAddress: Any" "SUCCESS"
+        }
+        else {
+            # netsh fallback (delete by name if exists)
+            netsh advfirewall firewall delete rule name="$allowName"  | Out-Null
+            netsh advfirewall firewall delete rule name="$blockName"  | Out-Null
 
-        Write-Log "BLOCK rule set: $blockName | Port $LocalPort/$Protocol | RemoteAddress: Any" "SUCCESS"
+            # Allow rule
+            netsh advfirewall firewall add rule `
+                name="$allowName" `
+                dir=in action=allow `
+                protocol=$Protocol localport=$LocalPort `
+                remoteip="$remote" `
+                profile=any enable=yes | Out-Null
+
+            # Block rule
+            netsh advfirewall firewall add rule `
+                name="$blockName" `
+                dir=in action=block `
+                protocol=$Protocol localport=$LocalPort `
+                remoteip=any `
+                profile=any enable=yes | Out-Null
+
+            Write-Log "ALLOW/BLOCK rules set via netsh: $allowName / $blockName | Port $LocalPort/$Protocol | Allowed: $remote" "SUCCESS"
+        }
     }
     catch {
-        Write-Log "Failed to set firewall rules for $RuleName: $_" "ERROR"
+        # FIXED: ${RuleName} avoids $RuleName: parsing error
+        Write-Log "Failed to set firewall rules for ${RuleName}: $($_.Exception.Message)" "ERROR"
     }
 }
 
 # ---------------------------
 # Tighten common remoting ports (firewall-level)
 # ---------------------------
-
-# RDP: 3389/TCP
-Set-RestrictiveRule -RuleName "CCDC - Restrict RDP" -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 3389
-
-# WinRM: 5985 HTTP, 5986 HTTPS
-Set-RestrictiveRule -RuleName "CCDC - Restrict WinRM HTTP"  -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 5985
+Set-RestrictiveRule -RuleName "CCDC - Restrict RDP"        -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 3389
+Set-RestrictiveRule -RuleName "CCDC - Restrict WinRM HTTP" -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 5985
 Set-RestrictiveRule -RuleName "CCDC - Restrict WinRM HTTPS" -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 5986
+Set-RestrictiveRule -RuleName "CCDC - Restrict SSH"        -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 22
 
-# SSH: 22/TCP (if installed)
-Set-RestrictiveRule -RuleName "CCDC - Restrict SSH" -DisplayGroup "CCDC Remoting" -Protocol TCP -LocalPort 22
-
-# WMI (DCOM/RPC) is complicated (dynamic ports). Prefer leaving it, or restrict via group rules cautiously.
 Write-Log "Note: WMI uses dynamic RPC ports; not disabling WMI rules here to avoid breaking monitoring/management." "INFO"
 
 # ---------------------------
@@ -168,7 +204,8 @@ if ($DisableServices) {
                 Write-Log "Service not found (skipped): $svcName" "INFO"
             }
         } catch {
-            Write-Log "Failed to disable service $svcName: $_" "WARNING"
+            # FIXED: ${svcName} avoids $svcName: parsing error
+            Write-Log "Failed to disable service ${svcName}: $($_.Exception.Message)" "WARNING"
         }
     }
 
@@ -177,7 +214,7 @@ if ($DisableServices) {
         Disable-PSRemoting -Force -ErrorAction SilentlyContinue
         Write-Log "PowerShell Remoting disabled" "SUCCESS"
     } catch {
-        Write-Log "Failed to disable PowerShell Remoting: $_" "WARNING"
+        Write-Log "Failed to disable PowerShell Remoting: $($_.Exception.Message)" "WARNING"
     }
 } else {
     Write-Log "DisableServices=OFF: services not disabled; only firewall restriction applied." "INFO"
