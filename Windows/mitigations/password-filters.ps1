@@ -1,6 +1,6 @@
 # ==============================================================================
 # Script Name : .\password-filters.ps1
-# Description : Monitors files for changes and maintains a baseline hash.
+# Description : Monitors for password filters
 # Author      : Tyler Olson
 # Version     : 1.0
 # ==============================================================================
@@ -49,12 +49,14 @@ try {
 
         # Take a sha 256 hash of each dll located in the hive
         foreach ($filter in $passwordFilters.NotificationPackages) {
-            $dllPath = Join-Path -Path $regPath -ChildPath $filter
+            $dllPath = "C:\Windows\System32\$filter.dll"
             if (Test-Path $dllPath) {
                 $hash = Get-FileHash -Path $dllPath -Algorithm SHA256
                 Write-Log "Hash for ${filter}: $($hash.Hash)" "INFO"
-            }
+            } else {
+                Write-Log "DLL not found: $dllPath" "WARNING"
         }
+}
         
         Write-Log "Printed out all file filters w? hashes." "SUCCESS"
     }
