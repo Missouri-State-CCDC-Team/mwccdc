@@ -83,7 +83,18 @@ catch {
     Write-Log "Failed to disable RDP: $_" "ERROR"
 }
 
-# 3. Array of services to disable 
+# 3. Disable PowerShell Remoting
+try { 
+    Write-Log "Disabling PowerShell Remoting" "INFO"
+    Disable-PSRemoting -Force -ErrorAction SilentlyContinue
+    Write-Log "PowerShell Remoting disabled successfully" "SUCCESS"
+}
+catch { 
+    Write-Log "Failed to disable PowerShell Remoting: $_" "ERROR"
+}
+
+
+# 4. Array of services to disable 
 $servicesToDisable = @(
     # Remote Desktop
     "TermService",
@@ -115,16 +126,6 @@ foreach ($service in $servicesToDisable) {
     catch {
         Write-Log "Error processing service ${service}: $_" "WARNING"
     }
-}
-
-# 4. Disable PowerShell Remoting
-try { 
-    Write-Log "Disabling PowerShell Remoting" "INFO"
-    Disable-PSRemoting -Force -ErrorAction SilentlyContinue
-    Write-Log "PowerShell Remoting disabled successfully" "SUCCESS"
-}
-catch { 
-    Write-Log "Failed to disable PowerShell Remoting: $_" "ERROR"
 }
 
 # Disable remote assistance
